@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
         // 1. Jalankan RoleSeeder terlebih dahulu agar ID peran tersedia
         $this->call([
             RoleSeeder::class,
+            CategorySeeder::class,
+            PrioritySeeder::class
         ]);
 
         // 2. Buat akun demo wajib menggunakan Factory dan State
