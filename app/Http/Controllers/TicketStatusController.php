@@ -6,6 +6,11 @@ use App\Http\Requests\Ticket\UpdateTicketStatusRequest;
 use App\Models\Ticket;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
+use App\Models\User;
+use App\Notifications\TicketResolvedNotification;
+use App\Notifications\TicketEscalatedNotification;
+use App\Enums\TicketStatus;
 
 class TicketStatusController extends Controller
 {
@@ -31,6 +36,15 @@ class TicketStatusController extends Controller
             $oldStatus,
             $newStatus
         );
+
+        $kumpulanSupervisorAdmin = User::whereHas('role', function ($query) {
+            $query->whereIn('slug', ['administrator', 'supervisor']);
+        })->get();
+        match ($ticket->status) {
+            TicketStatus::RESOLVED => $ticket->creator->notify(new TicketResolvedNotification($ticket)),
+            TicketStatus::ESCALATED => Notification::send($kumpulanSupervisorAdmin, new TicketEscalatedNotification($ticket)),
+            default => null,
+        };
         return response()->json(['message' => 'Status tiket berhasil diperbarui']);
     }
 }

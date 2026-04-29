@@ -20,14 +20,11 @@ return new class extends Migration
             // metadata teknis
             $table->string('file_path'); // lokasi fisik, misal 'upload/uuid.pdf'
             $table->string('file_name'); // nama file di sistem: '124asda-uuid.pdf'
-            $table->string('original_ame'); // nama file asli
+            $table->string('original_name'); // nama file asli
             $table->string('mime_type'); // Keamanan: 'application/pdf'
             $table->bigInteger('file_size');  // Ukuran: dalam byte
 
             $table->timestamps();
-
-            // Indeks untuk mempercepat pencarian berdasarkan tipe file atau relasi
-            $table->index(['attachable_type', 'attachable_id']);
         });
     }
 
