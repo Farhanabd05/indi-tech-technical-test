@@ -8,11 +8,24 @@ Di dalam model Attachment, bagaimana Anda akan membuat sebuah metode (misalnya a
 */
 class Attachment extends Model
 {
-    protected $fillable = ['file_path', 'file_name', 'original_name', 'mime_type', 'file_size'];
+    protected $fillable = [
+        'attachable_type',
+        'attachable_id',
+        'uploaded_by',
+        'original_name',
+        'stored_name',
+        'path',
+        'mime_type',
+        'size'
+    ];
+
+    public function getUrlAttribute()
+    {
+        return \Illuminate\Support\Facades\Storage::url($this->path);
+    }
 
     public function attachable()
     {
         return $this->morphTo();
     }
 }
-

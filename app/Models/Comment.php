@@ -12,9 +12,19 @@ class Comment extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
-        'content',
+        'body',
         'is_internal',
     ];
+
+    public function scopePublic($query)
+    {
+        return $query->where('is_internal', false);
+    }
+
+    public function scopeInternal($query)
+    {
+        return $query->where('is_internal', true);
+    }
 
     /// Relasi dengan model Ticket
     public function ticket()

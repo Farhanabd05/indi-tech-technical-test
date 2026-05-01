@@ -29,6 +29,8 @@ return new class extends Migration
             $table->timestamp('resolved_at')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
+            
+            $table->index(['priority_id', 'category_id']); // composite index untuk filter dashboard
         });
     }
 

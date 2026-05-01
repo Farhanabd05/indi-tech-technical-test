@@ -42,4 +42,34 @@ class User extends Authenticatable
         }
         return in_array($this->role?->slug, $roles);
     }
+
+    public function isCustomer(): bool
+    {
+        return $this->hasRole('customer');
+    }
+
+    public function isAgent(): bool
+    {
+        return $this->hasRole('agent');
+    }
+
+    public function isSupervisor(): bool
+    {
+        return $this->hasRole('supervisor');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function createdTickets()
+    {
+        return $this->hasMany(Ticket::class, 'created_by');
+    }
+
+    public function assignedTickets()
+    {
+        return $this->hasMany(Ticket::class, 'assigned_agent_id');
+    }
 }

@@ -17,12 +17,12 @@ return new class extends Migration
             // ini akan hubngin berkas ke model lain (misal comment atau ticket)
             $table->morphs('attachable');
 
-            // metadata teknis
-            $table->string('file_path'); // lokasi fisik, misal 'upload/uuid.pdf'
-            $table->string('file_name'); // nama file di sistem: '124asda-uuid.pdf'
-            $table->string('original_name'); // nama file asli
-            $table->string('mime_type'); // Keamanan: 'application/pdf'
-            $table->bigInteger('file_size');  // Ukuran: dalam byte
+            $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
+            $table->string('original_name');
+            $table->string('stored_name');
+            $table->string('path');
+            $table->string('mime_type');
+            $table->integer('size');
 
             $table->timestamps();
         });

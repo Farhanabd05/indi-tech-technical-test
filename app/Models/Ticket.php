@@ -63,6 +63,16 @@ class Ticket extends Model
         return $this->belongsToMany(Label::class);
     }
 
+    public function scopeOverdue($query)
+    {
+        return $query->where('due_at', '<', now())->whereNotIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED]);
+    }
+
+    public function scopeUnassigned($query)
+    {
+        return $query->whereNull('assigned_agent_id');
+    }
+
     public function scopeFilter($query, array $filters)
     {
         if (isset($filters['status'])) {
