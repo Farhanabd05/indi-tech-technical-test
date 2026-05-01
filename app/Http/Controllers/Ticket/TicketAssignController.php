@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ticket;
 
+use App\Http\Controllers\Controller;
 use App\Models\Ticket;
-use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\Ticket\AssignTicketRequest;
 use Illuminate\Http\JsonResponse;
 use App\Enums\TicketStatus;
 use Illuminate\Support\Facades\Auth;

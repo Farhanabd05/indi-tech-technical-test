@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('labels', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('color');
-            $table->timestamps();
-            $table->softDeletes();
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->timestamp('overdue_notified_at')->nullable()->after('status'); 
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('labels');
+        Schema::table('tickets', function (Blueprint $table) {
+            $table->dropColumn('overdue_notified_at'); 
+        });
     }
 };

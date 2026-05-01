@@ -34,4 +34,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class);
     }
+
+    public function hasRole($roles): bool
+    {
+        if (!is_array($roles)) {
+            $roles = [$roles];
+        }
+        return in_array($this->role?->name, $roles);
+    }
 }

@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Ticket;
 
+use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Gate; 
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\Ticket\StoreTicketRequest;
 use App\Services\TicketService;
 use App\Enums\TicketStatus;
 use App\Services\ActivityLogService;
 use App\Models\User;
 use App\Notifications\TicketCreatedNotification;
 use Illuminate\Support\Facades\Notification;
+use App\Http\Requests\Ticket\UpdateTicketRequest;
 
 class TicketController extends Controller
 {   
@@ -26,6 +28,8 @@ class TicketController extends Controller
         Gate::authorize('viewAny', Ticket::class);
 
         $query = Ticket::query();
+
+        $query->filter(request(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
 
         if (Auth::user()->role->slug === 'agent') {
             $query->where('assigned_agent_id', Auth::user()->id);
@@ -89,5 +93,23 @@ class TicketController extends Controller
             'message' => 'Tiket berhasil dibuat.',
             'ticket' => $ticket
         ], 201);
+    }
+    public function update(UpdateTicketRequest $request, Ticket $ticket)
+    {
+        $validated = $request->validated();
+        $ticket->update($validated);
+
+        ActivityLogService::log(
+            $ticket,
+            Auth::user(),
+            'update_ticket',
+            null,
+            'Tiket diperbarui dengan data: ' . json_encode($validated)
+        );
+
+        return response()->json([
+            'message' => 'Tiket berhasil diperbarui.',
+            'ticket' => $ticket
+        ], 200);
     }
 }

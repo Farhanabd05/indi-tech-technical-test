@@ -34,6 +34,20 @@ class TicketPolicy
         return $ticket->created_by === $user->id;
     }
 
+    public function comment(User $user, Ticket $ticket): bool
+    {
+        if ($user->hasRole(['Administrator', 'Supervisor'])) {
+            return true;
+        }   
+
+        if ($user->hasRole('Agent')) {
+            return $ticket->assigned_agent_id === $user->id;
+        }
+
+        // Customer: "View only tickets created by themselves"
+        return $ticket->created_by === $user->id;
+    }
+
     /**
      * Determine whether the user can create models.
      */
