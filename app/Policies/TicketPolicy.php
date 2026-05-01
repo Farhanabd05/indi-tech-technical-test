@@ -22,11 +22,11 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['Administrator', 'Supervisor'])) {
+        if ($user->hasRole(['admin', 'supervisor'])) {
             return true;
         }   
 
-        if ($user->hasRole('Agent')) {
+        if ($user->hasRole('agent')) {
             return $ticket->assigned_agent_id === $user->id;
         }
 
@@ -36,11 +36,11 @@ class TicketPolicy
 
     public function comment(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['Administrator', 'Supervisor'])) {
+        if ($user->hasRole(['admin', 'supervisor'])) {
             return true;
         }   
 
-        if ($user->hasRole('Agent')) {
+        if ($user->hasRole('agent')) {
             return $ticket->assigned_agent_id === $user->id;
         }
 
@@ -53,7 +53,7 @@ class TicketPolicy
      */
     public function create(User $user): bool
     {
-        if ($user->hasRole(['Administrator', 'Customer'])) {
+        if ($user->hasRole(['admin', 'customer'])) {
             return true;
         }   
         return false;
@@ -65,7 +65,7 @@ class TicketPolicy
     public function update(User $user, Ticket $ticket): bool
     {
         // Admin: "Create, edit, and manage tickets"
-        if ($user->hasRole('Administrator')) {
+        if ($user->hasRole('admin')) {
             return true;
         }
 
@@ -79,7 +79,7 @@ class TicketPolicy
      */
     public function changeStatus(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['Administrator', 'Agent'])) {
+        if ($user->hasRole(['admin', 'agent'])) {
             return true;
         }
 
@@ -96,7 +96,7 @@ class TicketPolicy
     {
         // Spesifikasi: Customer, Agent, Supervisor "CANNOT delete tickets"
         // Hanya Admin yang bisa (sebagai bagian dari 'manage tickets')
-        return $user->hasRole('Administrator');
+        return $user->hasRole('admin');
     }
 
     /**
@@ -105,13 +105,13 @@ class TicketPolicy
     public function viewInternalNotes(User $user, Ticket $ticket): bool
     {
         // Customer: "NEVER see internal notes"
-        return $user->hasRole(['Administrator', 'Supervisor', 'Agent']);
+        return $user->hasRole(['admin', 'supervisor', 'agent']);
     }
 
     public function assign(User $user, Ticket $ticket): bool
     {
         // Hanya Administrator dan Supervisor yang memiliki otoritas 
         // untuk menentukan atau mengubah Agent pada sebuah tiket.
-        return $user->hasRole(['Administrator', 'Supervisor']);
+        return $user->hasRole(['admin', 'supervisor']);
     }
 }

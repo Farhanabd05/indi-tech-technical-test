@@ -15,9 +15,9 @@ class RoleMiddleware
      * @param  Closure(Request): (Response)  $next
      */
 
-     public function handle(Request $request, Closure $next, string $role): Response
+     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!Auth::check() || Auth::user()->role->slug !== $role) {
+        if (!Auth::check() || !in_array(Auth::user()->role->slug, $roles)) {
             abort(403, 'Unauthorized action.');
         }
 

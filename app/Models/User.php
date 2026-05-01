@@ -40,6 +40,6 @@ class User extends Authenticatable
         if (!is_array($roles)) {
             $roles = [$roles];
         }
-        return in_array($this->role?->name, $roles);
+        return in_array($this->role?->slug, $roles);
     }
 }

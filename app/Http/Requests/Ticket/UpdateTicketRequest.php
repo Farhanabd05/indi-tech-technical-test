@@ -5,6 +5,8 @@ namespace App\Http\Requests\Ticket;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
+
 class UpdateTicketRequest extends FormRequest
 {
     /**
@@ -30,11 +32,18 @@ class UpdateTicketRequest extends FormRequest
     */
     public function rules(): array
     {
-        return [
+        $rules = [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'required', 'string'],
             'category_id' => ['sometimes', 'required', 'integer', 'exists:categories,id'],
             'priority_id' => ['sometimes', 'required', 'integer', 'exists:priorities,id'],
+            'assigned_agent_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
+
+        if (Auth::user()->role->slug === 'admin' || Auth::user()->role->slug === 'supervisor') {
+            unset($rules['assigned_agent_id']);
+        }
+
+        return $rules;
     }
 }
