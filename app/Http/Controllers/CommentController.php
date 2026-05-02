@@ -22,7 +22,7 @@ class CommentController extends Controller
         $comment = Comment::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
-            'content' => $validated['content'],
+            'body' => $validated['body'],
             'is_internal' => $validated['is_internal'] ?? false,
         ]);
         // Tentukan penerima notifikasi berdasarkan aturan bisnis
@@ -47,12 +47,9 @@ class CommentController extends Controller
             Auth::user(),
             'add_comment',
             null,
-            $comment->content
+            $comment->body
         );
 
-        return response()->json([
-            'message' => 'Komentar berhasil ditambahkan.',
-            'data'    => $comment
-        ], 201);
+        return redirect()->back();
     }
 }

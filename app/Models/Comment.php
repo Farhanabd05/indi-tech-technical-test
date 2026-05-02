@@ -13,8 +13,19 @@ class Comment extends Model
         'ticket_id',
         'user_id',
         'body',
+        'content',
         'is_internal',
     ];
+
+    public function setContentAttribute($value): void
+    {
+        $this->attributes['body'] = $value;
+    }
+
+    public function getContentAttribute(): ?string
+    {
+        return $this->body;
+    }
 
     public function scopePublic($query)
     {

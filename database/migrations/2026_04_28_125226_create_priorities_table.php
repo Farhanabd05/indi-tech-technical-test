@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('priorities', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // Contoh: Low, Medium, High, Critical
-            $table->unsignedInteger('response_time'); // dalam jam
-            $table->unsignedInteger('resolution_time'); // dalam jam
+            $table->integer('level');
+            $table->unsignedInteger('response_time')->default(0); // dalam jam
+            $table->unsignedInteger('resolution_time')->default(0); // dalam jam
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

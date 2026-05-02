@@ -46,7 +46,6 @@ class TicketStatusController extends Controller
             TicketStatus::ESCALATED => Notification::send($kumpulanSupervisorAdmin, new TicketEscalatedNotification($ticket)),
             default => null,
         };
-        return response()->json(['message' => 'Status tiket berhasil diperbarui']);
+        return redirect()->back();
     }
 }
-

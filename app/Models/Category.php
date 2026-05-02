@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\SoftDeletes; // 1. Import Trait
 
 class Category extends Model
 {
-    use SoftDeletes; // 2. Gunakan Trait di dalam kelas
-
-    // ... sisa kode model
+    use SoftDeletes;
+    
+    // Tambahkan properti pelindung ini
+    protected $guarded = ['id'];
 }

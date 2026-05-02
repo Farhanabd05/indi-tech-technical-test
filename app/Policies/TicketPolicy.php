@@ -79,13 +79,13 @@ class TicketPolicy
      */
     public function changeStatus(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['admin', 'agent'])) {
+        if ($user->hasRole(['administrator', 'agent', 'customer'])) {
             return true;
         }
 
         // Customer: "CANNOT change status directly, except reopening"
         // Logika detail transisi status harus ada di TicketStatusService
-        return $ticket->created_by === $user->id;
+        return false;
     }
 
 

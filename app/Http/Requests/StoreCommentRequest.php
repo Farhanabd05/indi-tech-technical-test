@@ -15,8 +15,11 @@ class StoreCommentRequest extends FormRequest
      */
     public function authorize(): bool 
     {
-        // Logika otorisasi bisa ditambahkanx di sini jika diperlukan
-        return true; // Sementara, izinkan semua pengguna untuk membuat komentar
+        if (Auth::user()?->role?->slug === 'customer' && $this->boolean('is_internal')) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -27,9 +30,8 @@ class StoreCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ticket_id' => ['required', 'exists:tickets,id'],
-            'content' => ['required', 'string'],
-            'is_internal' => Auth::user()->role->slug === 'customer' ? ['prohibited'] : ['sometimes', 'boolean'],
+            'body' => ['required', 'string'],
+            'is_internal' => ['sometimes', 'boolean'],
         ];
     }
 }

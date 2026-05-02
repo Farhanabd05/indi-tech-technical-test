@@ -23,7 +23,9 @@ class Ticket extends Model
         'category_id',
         'priority_id',
         'status',
-        'created_by'
+        'created_by',
+        'assigned_agent_id',
+        'due_at',
     ];
 
     protected function casts(): array // 2. Gunakan metode casts()
@@ -31,6 +33,7 @@ class Ticket extends Model
         return [
             // 3. Petakan status ke class Enum
             'status' => TicketStatus::class, 
+            'due_at' => 'datetime',
         ];
     }
     public function category()
@@ -63,9 +66,30 @@ class Ticket extends Model
         return $this->belongsToMany(Label::class);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     public function scopeOverdue($query)
     {
-        return $query->where('due_at', '<', now())->whereNotIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED]);
+        return $query->where('due_at', '<', now())
+            ->whereNotIn('status', [
+                TicketStatus::RESOLVED->value,
+                TicketStatus::CLOSED->value,
+                TicketStatus::WAITING_FOR_CUSTOMER->value,
+            ]);
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->due_at !== null
+            && $this->due_at->isPast()
+            && ! in_array($this->status, [
+                TicketStatus::RESOLVED,
+                TicketStatus::CLOSED,
+                TicketStatus::WAITING_FOR_CUSTOMER,
+            ], true);
     }
 
     public function scopeUnassigned($query)

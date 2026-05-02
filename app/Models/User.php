@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'role_id', 'email', 'password'])]
+#[Fillable(['name', 'role_id', 'team_id', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -35,11 +35,19 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
+
     public function hasRole($roles): bool
     {
         if (!is_array($roles)) {
             $roles = [$roles];
         }
+
+        $roles = array_map(fn ($role) => $role === 'admin' ? 'administrator' : $role, $roles);
+
         return in_array($this->role?->slug, $roles);
     }
 
@@ -60,7 +68,7 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasRole('administrator');
     }
 
     public function createdTickets()

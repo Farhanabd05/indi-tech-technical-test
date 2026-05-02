@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Illuminate\Validation\Validator;
 
 class AssignTicketRequest extends FormRequest
 {
@@ -22,8 +23,8 @@ class AssignTicketRequest extends FormRequest
     {
         // Pintu Masuk 2: Penyaringan Data
         return [
-            'agent_id' => [
-                'required',
+            'assigned_agent_id' => [
+                'nullable',
                 'integer',
                 // Memastikan agen eksis di tabel users
                 'exists:users,id', 
@@ -37,5 +38,23 @@ class AssignTicketRequest extends FormRequest
                 }),
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $user = Auth::user();
+            $agentId = $this->input('assigned_agent_id');
+
+            if (! $user || ! $user->hasRole('supervisor') || $agentId === null) {
+                return;
+            }
+
+            $agent = User::find($agentId);
+
+            if (! $agent || $user->team_id === null || $agent->team_id !== $user->team_id) {
+                abort(403);
+            }
+        });
     }
 }
