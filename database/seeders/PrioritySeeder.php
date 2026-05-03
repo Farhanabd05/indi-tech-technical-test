@@ -16,6 +16,7 @@ class PrioritySeeder extends Seeder
                 'resolution_time' => 120, // 5 days
                 'created_at' => now(),
                 'updated_at' => now(),
+                'level' => 1
             ],
             [
                 'name' => 'Medium',
@@ -23,6 +24,7 @@ class PrioritySeeder extends Seeder
                 'resolution_time' => 72, // 3 days
                 'created_at' => now(),
                 'updated_at' => now(),
+                'level' => 2
             ],
             [
                 'name' => 'High',
@@ -30,6 +32,7 @@ class PrioritySeeder extends Seeder
                 'resolution_time' => 24, // 1 day
                 'created_at' => now(),
                 'updated_at' => now(),
+                'level' => 3
             ],
             [
                 'name' => 'Critical',
@@ -37,6 +40,7 @@ class PrioritySeeder extends Seeder
                 'resolution_time' => 8, // 8 hours
                 'created_at' => now(),
                 'updated_at' => now(),
+                'level' => 4
             ],
         ];
 

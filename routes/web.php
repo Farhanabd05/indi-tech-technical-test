@@ -10,12 +10,31 @@ use App\Http\Controllers\Admin\LabelController;
 use App\Http\Controllers\Ticket\TicketStatusController;
 use App\Http\Controllers\Ticket\TicketAssignController;
 use \App\Http\Controllers\CommentController;
+use App\Http\Controllers\Admin\PriorityController;
+use App\Http\Controllers\Admin\SlaRuleController;
+
+
 
 Route::middleware(['auth', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('labels', LabelController::class);
+});
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Daftarkan resource route untuk users, roles, categories, labels, priorities, dan sla-rules di sini
+    Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::resource('labels', LabelController::class);
+
+    Route::resource('priorities', PriorityController::class);
+    Route::resource('sla-rules', SlaRuleController::class);
+    // Daftarkan get route biasa untuk logs
+    Route::get('logs', function () {
+        return view('admin.logs');
+    })->name('logs');
 });
 
 Route::get('/', function () {
