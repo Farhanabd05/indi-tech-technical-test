@@ -63,6 +63,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     // Parameter {ticket} harus sesuai dengan model yang didefinisikan di TicketPolicy
+    Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+    Route::get('/tickets/export', [TicketController::class, 'export'])->name('tickets.export');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
         ->middleware('can:view,ticket')
         ->name('tickets.show');

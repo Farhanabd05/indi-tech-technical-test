@@ -14,6 +14,10 @@ use App\Models\User;
 use App\Notifications\TicketCreatedNotification;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Requests\Ticket\UpdateTicketRequest;
+use App\Models\Label;
+use App\Models\Team;
+use App\Models\Category;
+use App\Models\Priority;
 
 class TicketController extends Controller
 {   
@@ -35,12 +39,20 @@ class TicketController extends Controller
             $query->where('assigned_agent_id', Auth::user()->id);
         } elseif (Auth::user()->role->slug === 'customer') {
             $query->where('created_by', Auth::user()->id);
+        } elseif (Auth::user()->role->slug === 'supervisor') {
+            $agentIds = User::where('team_id', Auth::user()->team_id)
+                        ->whereHas('role', function ($q) {
+                            $q->where('slug', 'agent');
+                        })->pluck('id');
+
+            $query->whereIn('assigned_agent_id', $agentIds);
         }
 
         $tickets = $query->paginate(10);
 
         return view('tickets.index', compact('tickets'));
     }
+
 
     public function store(StoreTicketRequest $request, TicketService $ticket_service)
     {
@@ -64,11 +76,12 @@ class TicketController extends Controller
             foreach ($request->file('attachments') as $file) {
                 $path = $file->store('tickets', 'public');
                 $ticket->attachments()->create([
-                    'file_path' => $path,
-                    'file_name' => $file->hashName(),
+                    'path' => $path,
+                    'stored_name' => $file->hashName(),
                     'original_name' => $file->getClientOriginalName(),
                     'mime_type' => $file->getMimeType(),
-                    'file_size' => $file->getSize(),
+                    'size' => $file->getSize(),
+                    'uploaded_by' => Auth::id()
                 ]);
             }
         }
@@ -111,5 +124,14 @@ class TicketController extends Controller
             'message' => 'Tiket berhasil diperbarui.',
             'ticket' => $ticket
         ], 200);
+    }
+
+    // creata
+    public function create()
+    {
+        $categories = Category::all();
+        $priorities = Priority::all();
+        $labels = Label::all();
+        return view('tickets.create', compact('categories', 'priorities', 'labels'));
     }
 }

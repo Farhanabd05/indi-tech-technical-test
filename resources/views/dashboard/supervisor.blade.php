@@ -10,7 +10,7 @@
                 <h2 class="text-xl font-bold mb-2">Total Tickets: {{ $totalTickets }}</h2>
             </div>
             <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Unassigned Tickets: {{ $unassignedTickets }}</h2>
+                <h2 class="text-xl font-bold mb-2">Unassigned Tickets: {{ $openTickets }}</h2>
             </div>
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-bold mb-2">Overdue Tickets: {{ $overdueTickets }}</h2>
@@ -27,14 +27,14 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                @foreach ($agentPerformance as $agent)
+                @foreach ($agentWorkload as $agent)
                     <tr>
-                        <td class="px-4 py-2">{{ $agent->name }}</td>
-                        <td class="px-4 py-2">{{ $agent->activeTicketsCount }}</td>
-                        <td class="px-4 py-2">{{ $agent->completionRate }}%</td>
+                        <td class="px-4 py-2">{{ $agent->assigned_agent_id }}</td>
+                        <td class="px-4 py-2">{{ $agent->total }}</td>
+                        <td class="px-4 py-2">{{ $averageResolutionTime[$agent->assigned_agent_id] ?? 'N/A' }}</td>
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 </x-app-layout>

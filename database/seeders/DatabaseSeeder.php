@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CategorySeeder::class,
-            PrioritySeeder::class
+            PrioritySeeder::class,
+            LabelSeeder::class
         ]);
 
         // 2. Buat akun demo wajib menggunakan Factory dan State
@@ -43,6 +44,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. (Opsional) Produksi ribuan data dummy lainnya
-        User::factory(1000)->customer()->create();
+        User::factory(100)->customer()->create();
     }
 }
