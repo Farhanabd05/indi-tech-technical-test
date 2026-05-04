@@ -12,8 +12,11 @@ use App\Http\Controllers\Ticket\TicketAssignController;
 use \App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\PriorityController;
 use App\Http\Controllers\Admin\SlaRuleController;
-
-
+use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\AdminDashboardController;
+use App\Http\Controllers\Dashboard\AgentDashboardController;
+use App\Http\Controllers\Dashboard\CustomerDashboardController;
+use App\Http\Controllers\Dashboard\SupervisorDashboardController;
 
 Route::middleware(['auth', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class);
@@ -41,9 +44,19 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
+Route::get('/dashboard/admin', AdminDashboardController::class)
+    ->middleware(['auth'])
+    ->name('dashboard.admin');
+Route::get('/dashboard/agent', AgentDashboardController::class)
+    ->middleware(['auth'])
+    ->name('dashboard.agent');
+Route::get('/dashboard/supervisor', SupervisorDashboardController::class)
+    ->middleware(['auth'])
+    ->name('dashboard.supervisor');
+Route::get('/dashboard/customer', CustomerDashboardController::class)
+    ->middleware(['auth'])
+    ->name('dashboard.customer');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

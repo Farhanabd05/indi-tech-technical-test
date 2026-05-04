@@ -1,4 +1,4 @@
-<aside class="w-72 min-h-screen bg-white border-r border-gray-200 flex flex-col shadow-sm">
+<aside class="w-full min-h-screen bg-white border-r border-gray-200 flex flex-col shadow-sm">
     {{-- Header --}}
     <div class="px-6 py-6 border-b border-gray-100">
         <div class="flex items-center gap-3">
