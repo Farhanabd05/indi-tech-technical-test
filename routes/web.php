@@ -17,6 +17,8 @@ use App\Http\Controllers\Dashboard\AdminDashboardController;
 use App\Http\Controllers\Dashboard\AgentDashboardController;
 use App\Http\Controllers\Dashboard\CustomerDashboardController;
 use App\Http\Controllers\Dashboard\SupervisorDashboardController;
+use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\ActivityLogController;
 
 Route::middleware(['auth', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class);
@@ -34,10 +36,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::resource('priorities', PriorityController::class);
     Route::resource('sla-rules', SlaRuleController::class);
-    // Daftarkan get route biasa untuk logs
-    Route::get('logs', function () {
-        return view('admin.logs');
-    })->name('logs');
 });
 
 Route::get('/', function () {
@@ -64,7 +62,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     // Parameter {ticket} harus sesuai dengan model yang didefinisikan di TicketPolicy
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
-    Route::get('/tickets/export', [TicketController::class, 'export'])->name('tickets.export');
+    Route::get('/tickets/export', [TicketController::class, 'export'])
+        ->middleware(['role:administrator,supervisor'])
+        ->name('tickets.export');
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
         ->middleware('can:view,ticket')
         ->name('tickets.show');
@@ -78,6 +78,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/comments', [CommentController::class, 'store'])
         ->middleware('can:comment,ticket')
         ->name('tickets.comments.store');
+    Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
+    // hanya admin dan supervisor yang bisa akses
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])
+        ->middleware(['role:administrator,supervisor'])
+        ->name('activity_logs.index');
 });
+
 
 require __DIR__.'/auth.php';

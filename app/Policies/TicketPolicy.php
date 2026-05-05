@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
-
+use \App\Enums\TicketStatus;
 class TicketPolicy
 {
     /**
@@ -79,12 +79,15 @@ class TicketPolicy
      */
     public function changeStatus(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['administrator', 'agent', 'customer'])) {
+        if ($user->hasRole(['administrator', 'agent'])) {
             return true;
         }
 
-        // Customer: "CANNOT change status directly, except reopening"
-        // Logika detail transisi status harus ada di TicketStatusService
+        if ($user->hasRole('customer')) {
+            return $ticket->created_by === $user->id && 
+                in_array($ticket->status, [TicketStatus::RESOLVED, TicketStatus::CLOSED]);
+        }
+        
         return false;
     }
 

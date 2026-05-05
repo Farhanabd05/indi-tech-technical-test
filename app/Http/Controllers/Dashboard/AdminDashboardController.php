@@ -53,6 +53,7 @@ class AdminDashboardController extends Controller
         $topAgents = (clone $queryBase)
             ->with('assignedAgent')
             ->selectRaw('assigned_agent_id, count(*) as total')
+            ->whereNotNull('assigned_agent_id')
             ->where('status', TicketStatus::RESOLVED)
             ->groupBy('assigned_agent_id')
             ->orderByDesc('total')

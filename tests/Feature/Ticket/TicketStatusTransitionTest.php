@@ -102,8 +102,8 @@ describe('Ticket Status Transition', function () {
         });
 
         it('allows resolved to reopened transition', function () {
-            $ticket = createTicket(['status' => TicketStatus::RESOLVED]);
             $customer = createUserWithRole('customer');
+            $ticket = createTicket(['status' => TicketStatus::RESOLVED, 'created_by' => $customer->id]);
 
             $response = $this->actingAs($customer)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::REOPENED->value,
@@ -117,8 +117,8 @@ describe('Ticket Status Transition', function () {
         });
 
         it('allows closed to reopened transition', function () {
-            $ticket = createTicket(['status' => TicketStatus::CLOSED]);
             $customer = createUserWithRole('customer');
+            $ticket = createTicket(['status' => TicketStatus::CLOSED, 'created_by' => $customer->id]);
 
             $response = $this->actingAs($customer)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::REOPENED->value,

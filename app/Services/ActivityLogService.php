@@ -19,7 +19,7 @@ class ActivityLogService
      * @param mixed $oldValue
      * @param mixed $newValue
      */
-    public static function log(Ticket $ticket, ?User $user, string $action, $oldValue, $newValue): void
+    public static function log(Ticket $ticket, ?User $user, string $action, $oldValue = null, $newValue = null): void
     {
         // Buat sebuah logika sebelum baris ActivityLog::create untuk mengubah data mixed tersebut menjadi teks biasa. (Petunjuk: Anda bisa memeriksa apakah data tersebut adalah objek tipe BackedEnum menggunakan instanceof \BackedEnum untuk mengambil nilai ->value-nya, atau menggunakan json_encode jika datanya berbentuk array).
         if ($oldValue instanceof \BackedEnum) {

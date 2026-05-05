@@ -23,6 +23,17 @@ class TicketStatusController extends Controller
         // 2. Ambil status baru dari request yang sudah divalidasi
         $newStatus = $request->validated()['status'];
 
+        if (!$ticket->assigned_agent_id && in_array($newStatus, [
+            TicketStatus::ASSIGNED->value, 
+            TicketStatus::IN_PROGRESS->value, 
+            TicketStatus::ESCALATED->value, 
+            TicketStatus::RESOLVED->value
+        ])) {
+            return back()->withErrors([
+                'status' => 'Tiket harus memiliki agen penanggung jawab sebelum status diubah.',
+            ]);
+        }
+
         // 3. Ubah atribut tiket
         $ticket->status = $newStatus;
 

@@ -13,12 +13,15 @@
                     @method('PATCH')
                     <label for="status">Ubah Status:</label>
                     <select name="status" id="status">
-                        @foreach (\App\Enums\TicketStatus::cases() as $status)
-                            <option value="{{ $status->value }}" {{ $ticket->status === $status->value ? 'selected' : '' }}>
-                                {{ $status->name }}
+                        @foreach ($statuses as $status)
+                            <option value="{{ $status }}" {{ $ticket->status->value === $status ? 'selected' : '' }}>
+                                {{ \App\Enums\TicketStatus::from($status)->label() }}
                             </option>
                         @endforeach
                     </select>
+                    @error('status')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                     <button type="submit">Simpan</button>
                 </form>
             @endcan
@@ -49,12 +52,32 @@
                 @endforeach
             </ul>
         </div>
+        <div class="mb-8">
+            @can('assign', $ticket)
+                <form action="{{ route('tickets.assign', $ticket) }}" method="POST" class="inline-block">
+                    @csrf
+                    <label for="agent_id" class="text-sm font-medium text-gray-700">Pendelegasikan ke Agen:</label>
+                    <select id="agent_id" name="assigned_agent_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        @foreach ($agents as $agent)
+                            <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('assigned_agent_id')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Pendelegasikan</button>
+                </form>
+            @endcan
+        </div>
         <!-- Formulir Tambah Komentar -->
         <div class="mb-8">
-            <form action="{{ route('tickets.comments.store', $ticket) }}" method="POST">
+            <form action="{{ route('tickets.comments.store', $ticket) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-4">
                     <textarea name="body" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tulis komentar..."></textarea>
+                    @error('body')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 
                 @if(!auth()->user()->hasRole('customer'))
@@ -65,7 +88,13 @@
                         </label>
                     </div>
                 @endif
-
+                <div class="mb-4">
+                    <label for="attachments" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
+                    <input type="file" name="attachments[]" id="attachments" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" multiple>
+                    @error('attachments')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Tambahkan Komentar</button>
             </form>
         </div>
@@ -77,6 +106,16 @@
                 @if (! $comment->is_internal || auth()->user()->can('viewInternal', $comment))
                     <div class="bg-gray-200 p-4 rounded {{ $comment->is_internal ? 'border-l-4 border-red-500' : 'border-l-4 border-blue-500' }}">
                         <p class="text-gray-800">{{ $comment->body }}</p>
+                        @if($comment->attachments->isNotEmpty())
+                            <div class="mt-4">
+                                <p class="text-sm text-gray-600">Lampiran:</p>
+                                <ul>
+                                    @foreach ($comment->attachments as $attachment)
+                                        <li><a href="{{ route('attachments.show', $attachment) }}">{{ $attachment->original_name }}</a></li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
                         <p class="text-sm text-gray-600 mt-2">Dibuat oleh: {{ $comment->user->name }} 
                             @if($comment->is_internal)
                                 <span class="text-red-600 font-bold ml-1">(Internal)</span>

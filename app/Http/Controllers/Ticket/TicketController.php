@@ -18,13 +18,25 @@ use App\Models\Label;
 use App\Models\Team;
 use App\Models\Category;
 use App\Models\Priority;
+use App\Services\TicketStatusService;
 
 class TicketController extends Controller
 {   
     public function show(Ticket $ticket)
     {
         Gate::authorize('view', $ticket);
-        return view('tickets.show', compact('ticket'));
+        $statuses = (new TicketStatusService())->allowedNextStatuses($ticket->status);
+
+        $agentsQuery = User::whereHas('role', function ($q) {
+            $q->where('slug', 'agent');
+        });
+
+        if (Auth::user()->role->slug === 'supervisor') {
+            $agentsQuery->where('team_id', Auth::user()->team_id);
+        }
+
+        $agents = $agentsQuery->get();
+        return view('tickets.show', compact('ticket', 'statuses', 'agents'));
     }
 
     public function index()
@@ -93,8 +105,6 @@ class TicketController extends Controller
             $ticket,
             Auth::user(),
             'create_ticket',
-            null,
-            'Tiket dibuat dengan nomor: ' . $ticketNumber
         );
 
         $adminUsers = User::whereHas('role', function ($query) {
@@ -102,10 +112,7 @@ class TicketController extends Controller
         })->get();
         Notification::send($adminUsers, new TicketCreatedNotification($ticket));
         
-        return response()->json([
-            'message' => 'Tiket berhasil dibuat.',
-            'ticket' => $ticket
-        ], 201);
+        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat.');
     }
     public function update(UpdateTicketRequest $request, Ticket $ticket)
     {
@@ -116,14 +123,9 @@ class TicketController extends Controller
             $ticket,
             Auth::user(),
             'update_ticket',
-            null,
-            'Tiket diperbarui dengan data: ' . json_encode($validated)
         );
 
-        return response()->json([
-            'message' => 'Tiket berhasil diperbarui.',
-            'ticket' => $ticket
-        ], 200);
+        return redirect()->route('tickets.show', $ticket)->with('success', 'Tiket berhasil diperbarui.');
     }
 
     // creata
@@ -133,5 +135,56 @@ class TicketController extends Controller
         $priorities = Priority::all();
         $labels = Label::all();
         return view('tickets.create', compact('categories', 'priorities', 'labels'));
+    }
+
+    public function export()
+    {
+        $query = Ticket::query();
+
+        // 1. Terapkan filter yang sama persis dengan halaman antarmuka
+        $query->filter(request(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
+
+        // 2. Muat relasi yang valid untuk mencegah N+1 Query
+        $query->with(['category', 'priority', 'labels', 'assignedAgent', 'creator']);
+        
+        // 3. Batasi akses penyelia hanya untuk timnya sendiri menggunakan relasi
+        if (Auth::user()->role->slug === 'supervisor') {
+            $query->whereHas('assignedAgent', function ($q) {
+                $q->where('team_id', Auth::user()->team_id);
+            });
+        }
+
+        // 4. Tarik seluruh data (tanpa pagination)
+        $tickets = $query->get();
+
+
+        return response()->streamDownload(function () use ($tickets) {
+            $file = fopen('php://output', 'w');
+
+            fputcsv($file, [
+                'ID',
+                'Judul',
+                'Kategori',
+                'Prioritas',
+                'Agen',
+                'Status',
+                'Pembuat',
+                'Tanggal Dibuat',
+            ]);
+            
+            foreach ($tickets as $ticket) {
+                fputcsv($file, [
+                    $ticket->id,
+                    $ticket->title,
+                    $ticket->category->name,
+                    $ticket->priority->name,
+                    $ticket->assignedAgent ? $ticket->assignedAgent->name : 'No Agent',
+                    $ticket->status->label(),
+                    $ticket->creator->name,
+                    $ticket->created_at,
+                ]);
+            }
+            fclose($file);
+            }, 'tickets.csv', ['Content-Type' => 'text/csv'], 'attachment');
     }
 }

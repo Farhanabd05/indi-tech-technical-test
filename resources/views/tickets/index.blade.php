@@ -3,7 +3,14 @@
         <h1 class="text-3xl font-bold underline">Daftar Tiket</h1>
     </x-slot>
     <div class="container mx-auto">
-        <a href="{{ route('tickets.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buat Tiket Baru</a>
+        @can('create', App\Models\Ticket::class)
+            <a href="{{ route('tickets.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buat Tiket Baru</a>
+        @endcan
+        @if (Auth::user()->role->slug === 'administrator' || Auth::user()->role->slug === 'supervisor')
+            <form action="{{ route('tickets.export', request()->query()) }}" method="GET">
+                <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Ekspor CSV</button>
+            </form>
+        @endif
     </div>
 
     <div class="container mx-auto mt-4">

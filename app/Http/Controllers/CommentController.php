@@ -25,6 +25,21 @@ class CommentController extends Controller
             'body' => $validated['body'],
             'is_internal' => $validated['is_internal'] ?? false,
         ]);
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('comments', 'public');
+                $comment->attachments()->create([
+                    'path' => $path,
+                    'stored_name' => $file->hashName(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                    'uploaded_by' => Auth::id()
+                ]);
+            }
+        }
+
         // Tentukan penerima notifikasi berdasarkan aturan bisnis
         if ($comment->is_internal) {
             if (Auth::id() !== $ticket->assigned_agent_id) {
@@ -45,9 +60,7 @@ class CommentController extends Controller
         ActivityLogService::log(
             $ticket,
             Auth::user(),
-            'add_comment',
-            null,
-            $comment->body
+            'add_comment'
         );
 
         return redirect()->back();

@@ -26,4 +26,10 @@ class ActivityLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+
+    public function getAssignedAgentNameAttribute()
+    {
+        return User::find($this->new_value)?->name ?? 'Agent Sudah Dihapus';
+    }
 }
