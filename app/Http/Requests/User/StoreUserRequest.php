@@ -27,6 +27,21 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role_id' => ['required', 'exists:roles,id'],
+            'team_id' => ['nullable', 'exists:teams,id', 'required_if:role_id,2,3'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'team_id' => 'team',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'team_id.required_if' => 'Kolom :attribute wajib diisi jika Anda memilih peran Agent atau Supervisor.',
         ];
     }
 }

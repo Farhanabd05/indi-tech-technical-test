@@ -52,6 +52,15 @@
                 @endforeach
             </ul>
         </div>
+        <!-- current agent yang didelegasikan -->
+        <div class="mb-4">
+            <p>Agen yang didelegasikan:</p>
+            @if($ticket->assignedAgent)
+                <p>{{ $ticket->assignedAgent->name }}</p>
+            @else
+                <p>Tidak ada agen yang didelegasikan.</p>
+            @endif
+        </div>
         <div class="mb-8">
             @can('assign', $ticket)
                 <form action="{{ route('tickets.assign', $ticket) }}" method="POST" class="inline-block">

@@ -61,8 +61,12 @@ class TicketController extends Controller
         }
 
         $tickets = $query->paginate(10);
+        $statuses = TicketStatus::cases();
+        $priorities = Priority::all();
+        $categories = Category::all();
+        $labels = Label::all();
 
-        return view('tickets.index', compact('tickets'));
+        return view('tickets.index', compact('tickets', 'statuses', 'priorities', 'categories', 'labels'));
     }
 
 
