@@ -2,9 +2,9 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Master Data Label') }}
+                {{ __('Master Data Role') }}
             </h2>
-            <a href="{{ route('admin.labels.index') }}" class="bg-blue-500 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded">
+            <a href="{{ route('admin.roles.index') }}" class="bg-blue-500 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded">
                 Kembali
             </a>
         </div>
@@ -14,27 +14,28 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <form action="{{ route('admin.labels.update', $label->id) }}" method="POST">
+                    <form action="{{ route('admin.roles.update', $role) }}" method="POST">
                         @csrf
                         @method('PUT')
                         <div class="mb-6">
                             <label for="name" class="block text-gray-700 text-sm font-bold mb-2">
-                                Nama Label
+                                Nama Role
                             </label>
-                            <input type="text" name="name" id="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ $label->name }}">
-                            @error('name')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <input type="text" name="name" id="name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ $role->name }}">
                         </div>
+                        @error('name')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                        <!-- input slug -->
                         <div class="mb-6">
-                            <label for="color" class="block text-gray-700 text-sm font-bold mb-2">
-                                Warna (Dalam Hex)
+                            <label for="slug" class="block text-gray-700 text-sm font-bold mb-2">
+                                Slug Role
                             </label>
-                            <input type="color" name="color" id="color" class="shadow border rounded w-full h-10 cursor-pointer" value="{{ $label->color }}">
-                            @error('color')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <input type="text" name="slug" id="slug" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ $role->slug }}">
                         </div>
+                        @error('slug')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                         <div class="flex items-center justify-between">
                             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                                 Simpan

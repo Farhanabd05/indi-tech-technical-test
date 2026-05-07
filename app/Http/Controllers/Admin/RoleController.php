@@ -58,4 +58,14 @@ class RoleController extends Controller
         return redirect()->route('admin.roles.index')
                          ->with('success', 'Role berhasil dihapus.');
     }
+
+    public function create()
+    {
+        return view('admin.roles.create'); // Tampilkan formulir untuk membuat role baru
+    }
+
+    public function edit(Role $role)
+    {
+        return view('admin.roles.edit', compact('role')); // Tampilkan formulir untuk mengedit role yang sudah ada
+    }
 }

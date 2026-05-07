@@ -59,16 +59,18 @@
                                         </form>
                                     </td>
                                 </tr>
-                            @endforeach
-                            @if($categories->isEmpty())
+                                <!-- paginasi woy -->
+                                @endforeach
+                                @if($categories->isEmpty())
                                 <tr>
                                     <td colspan="3" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center">
                                         <p class="text-gray-500 whitespace-no-wrap">Tidak ada data kategori.</p>
                                     </td>
                                 </tr>
-                            @endif
-                        </tbody>
-                    </table>
+                                @endif
+                            </tbody>
+                        </table>
+                        {{ $categories->links() }}
                 </div>
             </div>
         </div>

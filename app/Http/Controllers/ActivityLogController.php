@@ -15,7 +15,7 @@ class ActivityLogController extends Controller
     public function index()
     {
         if (Auth::user()->role->slug == 'administrator') {
-            $logs = ActivityLog::with(['ticket', 'user'])->orderBy('created_at', 'desc')->get();
+            $logs = ActivityLog::with(['ticket', 'user'])->orderBy('created_at', 'desc')->paginate(10);
         }
 
         if (Auth::user()->role->slug == 'supervisor') {
@@ -32,7 +32,7 @@ class ActivityLogController extends Controller
                             // Berikan kondisi agar assigned_agent_id termasuk dalam kumpulan $agentIds
                             $query->whereIn('assigned_agent_id', $agentIds);
                         })
-                        ->orderBy('created_at', 'desc')->get();
+                        ->orderBy('created_at', 'desc')->paginate(10);
         }
         return view('activity_logs.index', compact('logs'));
     }

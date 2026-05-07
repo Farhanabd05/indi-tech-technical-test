@@ -71,6 +71,7 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        {{ $slaRules->links() }}
                     </form>
                 </div>
             </div>

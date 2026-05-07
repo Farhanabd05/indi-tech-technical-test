@@ -12,7 +12,7 @@ class PriorityController extends Controller
     public function index()
     {   
         // sort by level
-        $priorities = Priority::orderBy('level', 'desc')->get();
+        $priorities = Priority::orderBy('level', 'desc')->paginate(10);
         return view('admin.priorities.index', compact('priorities'));
     }
 

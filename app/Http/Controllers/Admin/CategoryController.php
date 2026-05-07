@@ -29,8 +29,8 @@ class CategoryController extends Controller
 
     public function index()
     {
-        $categories = Category::all(); // Ambil semua data kategori dari database
-        return view('admin.categories.index', compact('categories')); // Lempar data ke view menggunakan compact
+        $categories = Category::paginate(10);
+        return view('admin.categories.index', compact('categories'));
     }
 
     public function create()

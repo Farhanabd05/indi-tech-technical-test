@@ -4,6 +4,7 @@ namespace App\Http\Requests\Role;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -24,6 +25,7 @@ class UpdateRoleRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('roles')->ignore($this->route('role'))],
         ];
     }
 }

@@ -50,6 +50,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    {{ $priorities->links() }}
                 </div>
             </div>
         </div>

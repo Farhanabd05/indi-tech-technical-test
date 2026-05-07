@@ -54,5 +54,6 @@
                 @endforeach
             </tbody>
         </table>
+        {{ $logs->links() }}
     </div>
 </x-app-layout>

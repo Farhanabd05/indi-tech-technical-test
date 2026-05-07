@@ -13,7 +13,7 @@ class SlaRuleController extends Controller
     public function index()
     {
         // fetch all sla rules
-        $slaRules = SlaRule::with('priority')->get();
+        $slaRules = SlaRule::with('priority')->paginate(10);
         // render the view and pass the sla rules to it
         return view('admin.sla-rules.index', compact('slaRules'));
     }

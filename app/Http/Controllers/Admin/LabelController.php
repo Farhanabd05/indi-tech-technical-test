@@ -11,7 +11,7 @@ class LabelController extends Controller
 {
     public function index()
     {
-        $labels = Label::all(); // Ambil semua data label dari database
+        $labels = Label::paginate(10);
         return view('admin.labels.index', compact('labels')); // Lempar data ke view menggunakan compact
     }
 

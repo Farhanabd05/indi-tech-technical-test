@@ -29,7 +29,7 @@
                 <tbody class="divide-y">
                 @foreach ($agentWorkload as $agent)
                     <tr>
-                        <td class="px-4 py-2">{{ $agent->assigned_agent_id }}</td>
+                        <td class="px-4 py-2">{{ $agent->assignedAgent->name }}</td>
                         <td class="px-4 py-2">{{ $agent->total }}</td>
                         <td class="px-4 py-2">{{ $averageResolutionTime[$agent->assigned_agent_id] ?? 'N/A' }}</td>
                     </tr>
