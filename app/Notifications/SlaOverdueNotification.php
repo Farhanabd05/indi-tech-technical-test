@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 use App\Models\Ticket;
 /*
 */
-class SlaOverdueNotification extends Notification
+class SlaOverdueNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -37,10 +37,12 @@ class SlaOverdueNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->line('The introduction to the notification.')
-            ->action('Notification Action', url('/'))
-            ->line('Thank you for using our application!');
+            ->subject('SLA Overdue Notification')
+            ->line('The ticket with ID ' . $this->ticket->id . ' has exceeded its SLA.')
+            ->action('View Ticket', url('/tickets/' . $this->ticket->id))
+            ->line('Please take immediate action to resolve the ticket.');
     }
+
 
     /**
      * Get the array representation of the notification.
@@ -50,7 +52,9 @@ class SlaOverdueNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'ticket_id' => $this->ticket->id,
+            'ticket_number' => $this->ticket->ticket_number,
+            'message' => 'The SLA for this ticket has been overdue.'
         ];
     }
 }

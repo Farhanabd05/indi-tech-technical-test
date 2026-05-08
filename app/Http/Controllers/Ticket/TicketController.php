@@ -27,6 +27,16 @@ class TicketController extends Controller
         Gate::authorize('view', $ticket);
         $statuses = (new TicketStatusService())->allowedNextStatuses($ticket->status);
 
+        $ticket->load([
+            'labels',
+            'category',
+            'priority',
+            'attachments',
+            'comments.user',
+            'comments.attachments',
+            'creator',
+            'assignedAgent',
+        ]);
         $agentsQuery = User::whereHas('role', function ($q) {
             $q->where('slug', 'agent');
         });

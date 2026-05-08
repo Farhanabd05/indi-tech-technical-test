@@ -7,14 +7,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Ticket;
-class TicketResolvedNotification extends Notification
+class TicketResolvedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(public Ticket $ticket)
+    public function __construct(public Ticket $ticket) 
     {
     }
 

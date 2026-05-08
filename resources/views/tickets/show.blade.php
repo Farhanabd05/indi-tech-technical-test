@@ -68,7 +68,7 @@
                     <label for="agent_id" class="text-sm font-medium text-gray-700">Pendelegasikan ke Agen:</label>
                     <select id="agent_id" name="assigned_agent_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         @foreach ($agents as $agent)
-                            <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                            <option value="{{ $agent->id }}" @if($ticket->assignedAgent && $ticket->assignedAgent->id == $agent->id) selected @endif>{{ $agent->name }}</option>
                         @endforeach
                     </select>
                     @error('assigned_agent_id')
