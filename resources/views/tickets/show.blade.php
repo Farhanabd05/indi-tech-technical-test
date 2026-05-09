@@ -135,5 +135,10 @@
                 @endif
             @endforeach
         </div>
+        <form action="{{ route('tickets.attachments.store', $ticket->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <input type="file" name="attachments[]" multiple required>
+            <button type="submit">Uji Upload Lampiran Baru</button>
+        </form>
     </div>
 </x-app-layout>

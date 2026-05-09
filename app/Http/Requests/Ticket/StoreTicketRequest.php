@@ -15,7 +15,6 @@ class StoreTicketRequest extends FormRequest
     public function authorize(): bool
     {
         // Pintu Masuk 1: Batasan Otorisasi
-        // Bagaimana Anda mengubah logika pada authorize() agar memanggil fungsi evaluasi dari Gate menggunakan metode allows untuk tindakan penciptaan tiket?
         return Gate::allows('create', Ticket::class);
     }
 

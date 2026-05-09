@@ -39,9 +39,6 @@ class TicketAssignController extends Controller
             null,
             $agentId
         );
-        /*
-        Pertanyaan reflektif untuk Anda: Tepat di bawah pemanggilan ActivityLogService pada pengontrol Anda, bagaimana Anda akan menuliskan satu baris perintah untuk memicu pengiriman notifikasi tersebut kepada agen? (Petunjuk: Anda bisa menarik data pengguna agen melalui metode relasi $ticket->assignedAgent—jika relasi tersebut sudah ada di model Ticket—atau menggunakan kueri User::find($validated['agent_id']), lalu menyambungkannya dengan metode ->notify(...)).
-        */
         // pengiriman notifikasi ke agen yang ditugaskan
         $assignedAgent = $ticket->assignedAgent;
         if ($assignedAgent) {

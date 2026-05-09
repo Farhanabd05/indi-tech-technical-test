@@ -117,4 +117,15 @@ class TicketPolicy
         // untuk menentukan atau mengubah Agent pada sebuah tiket.
         return $user->hasRole(['admin', 'supervisor']);
     }
+
+    public function upload(User $user, Ticket $ticket): bool
+    {
+        // Izinkan jika pengguna adalah administrator atau supervisor
+        if ($user->hasRole(['administrator', 'supervisor'])) {
+            return true;
+        }
+
+        // Izinkan jika pengguna adalah pembuat tiket atau agen yang ditugaskan
+        return $user->id === $ticket->created_by || $user->id === $ticket->assigned_agent_id;
+    }
 }

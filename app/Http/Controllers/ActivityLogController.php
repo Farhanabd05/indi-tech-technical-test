@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ActivityLogController extends Controller
 {
-    /*
-    Sebagai langkah pendahuluan sebelum merakit antarmukanya, jika Anda diminta untuk membuat metode index di dalam sebuah berkas app/Http/Controllers/ActivityLogController.php baru, bagaimana Anda akan menyusun kueri menggunakan ActivityLog::with(['ticket', 'user']) yang secara otomatis memfilter log berdasarkan team_id khusus jika pengguna yang sedang login adalah seorang penyelia?
-    */
     public function index()
     {
         if (Auth::user()->role->slug == 'administrator') {

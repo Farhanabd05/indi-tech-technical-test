@@ -19,21 +19,13 @@ use App\Http\Controllers\Dashboard\CustomerDashboardController;
 use App\Http\Controllers\Dashboard\SupervisorDashboardController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\ActivityLogController;
+use Illuminate\Support\Facades\Auth;
 
 Route::middleware(['auth', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('roles', RoleController::class);
     Route::resource('users', UserController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('labels', LabelController::class);
-});
-
-Route::prefix('admin')->name('admin.')->group(function () {
-    // Daftarkan resource route untuk users, roles, categories, labels, priorities, dan sla-rules di sini
-    Route::resource('users', UserController::class);
-    Route::resource('roles', RoleController::class);
-    Route::resource('categories', CategoryController::class);
-    Route::resource('labels', LabelController::class);
-
     Route::resource('priorities', PriorityController::class);
     Route::resource('sla-rules', SlaRuleController::class);
 });
@@ -43,24 +35,28 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
-Route::get('/dashboard/admin', AdminDashboardController::class)
-    ->middleware(['auth'])
-    ->name('dashboard.admin');
-Route::get('/dashboard/agent', AgentDashboardController::class)
-    ->middleware(['auth'])
-    ->name('dashboard.agent');
-Route::get('/dashboard/supervisor', SupervisorDashboardController::class)
-    ->middleware(['auth'])
-    ->name('dashboard.supervisor');
-Route::get('/dashboard/customer', CustomerDashboardController::class)
-    ->middleware(['auth'])
-    ->name('dashboard.customer');
+Route::middleware('auth')->prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::get('/admin', AdminDashboardController::class)
+        ->middleware('role:administrator')
+        ->name('admin');
+        
+    Route::get('/supervisor', SupervisorDashboardController::class)
+        ->middleware('role:supervisor')
+        ->name('supervisor');
+        
+    Route::get('/agent', AgentDashboardController::class)
+        ->middleware('role:agent')
+        ->name('agent');
+        
+    Route::get('/customer', CustomerDashboardController::class)
+        ->middleware('role:customer')
+        ->name('customer');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    // Parameter {ticket} harus sesuai dengan model yang didefinisikan di TicketPolicy
     Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
     Route::get('/tickets/export', [TicketController::class, 'export'])
         ->middleware(['role:administrator,supervisor'])
@@ -83,6 +79,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->middleware(['role:administrator,supervisor'])
         ->name('activity_logs.index');
+    Route::get('/notifications/{id}/read', function ($id) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $notification = $user->notifications()->findOrFail($id);
+        $notification->markAsRead();
+        return redirect()->route('tickets.show', $notification->data['ticket_id']);
+    })->name('notifications.read');
+    Route::post('/tickets/{ticket}/attachments', [AttachmentController::class, 'store'])
+        ->middleware('can:upload,ticket')
+        ->name('tickets.attachments.store');
 });
 
 

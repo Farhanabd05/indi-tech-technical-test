@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Ticket;
 use App\Models\User;
 
-// <!-- Pertanyaan reflektif untuk Anda: Silakan buat berkas model app/Models/ActivityLog.php. Mengacu pada parameter yang dikirim oleh layanan Anda tadi, apa saja isi dari susunan (array) properti $fillable yang akan Anda tuliskan, dan bagaimana Anda merancang dua fungsi relasi Eloquent (belongsTo) yang menghubungkan model ini dengan model Ticket dan User? -->
 class ActivityLog extends Model
 {
     protected $fillable = [

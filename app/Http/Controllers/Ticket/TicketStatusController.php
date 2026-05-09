@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\TicketResolvedNotification;
 use App\Notifications\TicketEscalatedNotification;
 use App\Enums\TicketStatus;
+use Carbon\CarbonImmutable as DateTime;
 
 class TicketStatusController extends Controller
 {
@@ -36,6 +37,14 @@ class TicketStatusController extends Controller
 
         // 3. Ubah atribut tiket
         $ticket->status = $newStatus;
+        if ($newStatus == TicketStatus::RESOLVED->value) {
+            $ticket->resolved_at = DateTime::now();
+        } else if ($newStatus == TicketStatus::CLOSED->value) {
+            $ticket->closed_at = DateTime::now();
+        } else { // klo misal statusnya reopened
+            $ticket->resolved_at = null;
+            $ticket->closed_at = null;
+        }
 
         // 4. Eksekusi penyimpanan ke pangkalan data
         $ticket->save();

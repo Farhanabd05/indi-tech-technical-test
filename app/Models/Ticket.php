@@ -5,9 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\TicketStatus; // 1. Import Enum
 
-/*
-Silakan buka model Ticket dan buat model Label jika belum ada. Bagaimana Anda merancang fungsi relasi pada kedua model tersebut (misalnya metode labels() di dalam Ticket, dan metode tickets() di dalam Label) menggunakan fungsi Eloquent $this->belongsToMany(...)
-*/ 
 class Ticket extends Model
 {
     
