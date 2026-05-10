@@ -43,6 +43,7 @@ class SupervisorDashboardController extends Controller
             ->selectRaw('assigned_agent_id, count(*) as total')
             ->whereNotIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED])
             ->groupBy('assigned_agent_id')
+            ->with('assignedAgent') // Eager loading the assignedAgent relationship
             ->get();
 
         // Menarik tiket terselesaikan tanpa groupBy di SQL agar semua tiket terambil
@@ -52,15 +53,14 @@ class SupervisorDashboardController extends Controller
             ->get();
 
         // Menghitung waktu resolusi rata-rata PER AGEN menggunakan Laravel Collection
-        $averageResolutionTime = $resolvedTickets
+        $averageResolutionTime = (clone $queryBase)
+            ->whereIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED])
+            ->whereNotNull('resolved_at')
+            ->selectRaw('assigned_agent_id, AVG(TIME_TO_SEC(resolved_at - created_at)) as average_resolution_time')
             ->groupBy('assigned_agent_id')
-            ->map(function ($agentTickets) {
-                // Rata-rata dari selisih waktu dibuat dan diselesaikan per tiket
-                return $agentTickets->avg(function ($ticket) {
-                    $resolvedAt = Carbon::parse($ticket->resolved_at);
-                    return $ticket->created_at->diffInHours($resolvedAt);
-                });
-            });
+            ->get()
+            ->pluck('average_resolution_time', 'assigned_agent_id')
+            ->toArray();
 
         // Melempar data ke antarmuka pengguna
         return view('dashboard.supervisor', compact(

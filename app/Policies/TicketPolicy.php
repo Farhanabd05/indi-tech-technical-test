@@ -13,7 +13,6 @@ class TicketPolicy
      */
     public function viewAny(User $user): bool
     {
-        //viewAny() sebaiknya tidak mengembalikan false untuk semua pengguna. Berikan izin ke pengguna yang sudah autentikasi, lalu lakukan pembatasan data di query controller.
         return $user !== null; // Hanya pengguna yang sudah login yang bisa melihat daftar tiket
     }
 
@@ -22,9 +21,13 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['admin', 'supervisor'])) {
+        if ($user->hasRole('admin')) {
             return true;
         }   
+
+        if ($user->hasRole('supervisor')) {
+            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
+        }
 
         if ($user->hasRole('agent')) {
             return $ticket->assigned_agent_id === $user->id;
@@ -113,9 +116,15 @@ class TicketPolicy
 
     public function assign(User $user, Ticket $ticket): bool
     {
-        // Hanya Administrator dan Supervisor yang memiliki otoritas 
-        // untuk menentukan atau mengubah Agent pada sebuah tiket.
-        return $user->hasRole(['admin', 'supervisor']);
+        return $user->hasRole(['admin']);
+    }
+
+    public function reassign(User $user, Ticket $ticket): bool
+    {
+        if ($user->role->slug === 'supervisor') {
+            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
+        }
+        return $user->role->slug === 'administrator';
     }
 
     public function upload(User $user, Ticket $ticket): bool

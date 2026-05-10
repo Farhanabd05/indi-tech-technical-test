@@ -5,67 +5,21 @@ namespace App\Http\Controllers\Ticket;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Ticket\UpdateTicketStatusRequest;
 use App\Models\Ticket;
-use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
-use App\Models\User;
-use App\Notifications\TicketResolvedNotification;
-use App\Notifications\TicketEscalatedNotification;
 use App\Enums\TicketStatus;
-use Carbon\CarbonImmutable as DateTime;
+use App\Services\TicketStatusService;
+use Illuminate\Support\Facades\Gate;
 
 class TicketStatusController extends Controller
 {
-    public function update(UpdateTicketStatusRequest $request, Ticket $ticket)
+    public function update(UpdateTicketStatusRequest $request, Ticket $ticket, TicketStatusService $statusService)
     {
-        // 1. Amankan data status lama ke dalam variabel sementara
-        $oldStatus = $ticket->status;
-
-        // 2. Ambil status baru dari request yang sudah divalidasi
-        $newStatus = $request->validated()['status'];
-
-        if (!$ticket->assigned_agent_id && in_array($newStatus, [
-            TicketStatus::ASSIGNED->value, 
-            TicketStatus::IN_PROGRESS->value, 
-            TicketStatus::ESCALATED->value, 
-            TicketStatus::RESOLVED->value
-        ])) {
-            return back()->withErrors([
-                'status' => 'Tiket harus memiliki agen penanggung jawab sebelum status diubah.',
-            ]);
+        Gate::authorize('changeStatus', $ticket);
+        try {
+            $statusService->changeStatus($ticket, TicketStatus::from($request->validated()['status']), Auth::user());
+            return redirect()->back()->with('success', 'Status berhasil diubah.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
         }
-
-        // 3. Ubah atribut tiket
-        $ticket->status = $newStatus;
-        if ($newStatus == TicketStatus::RESOLVED->value) {
-            $ticket->resolved_at = DateTime::now();
-        } else if ($newStatus == TicketStatus::CLOSED->value) {
-            $ticket->closed_at = DateTime::now();
-        } else { // klo misal statusnya reopened
-            $ticket->resolved_at = null;
-            $ticket->closed_at = null;
-        }
-
-        // 4. Eksekusi penyimpanan ke pangkalan data
-        $ticket->save();
-
-        // 5. Panggil layanan pencatatan riwayat (Log)
-        ActivityLogService::log(
-            $ticket,
-            Auth::user(),
-            'update_status',
-            $oldStatus,
-            $newStatus
-        );
-
-        $kumpulanSupervisorAdmin = User::whereHas('role', function ($query) {
-            $query->whereIn('slug', ['administrator', 'supervisor']);
-        })->get();
-        match ($ticket->status) {
-            TicketStatus::RESOLVED => $ticket->creator->notify(new TicketResolvedNotification($ticket)),
-            TicketStatus::ESCALATED => Notification::send($kumpulanSupervisorAdmin, new TicketEscalatedNotification($ticket)),
-            default => null,
-        };
-        return redirect()->back();
     }
 }

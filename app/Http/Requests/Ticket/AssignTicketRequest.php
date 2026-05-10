@@ -7,14 +7,17 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Validation\Validator;
+use Illuminate\Support\Facades\Gate;
 
 class AssignTicketRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Pintu Masuk 1: Batasan Otorisasi
-        return Auth::check() && 
-            in_array(Auth::user()->role->slug, ['administrator', 'supervisor']);
+        $ticket = $this->route('ticket');
+
+        return $ticket->assigned_agent_id 
+            ? Gate::allows('reassign', $ticket) 
+            : Gate::allows('assign', $ticket);
     }
 
     public function rules(): array
@@ -41,6 +44,7 @@ class AssignTicketRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            /** @var \App\Models\User */
             $user = Auth::user();
             $agentId = $this->input('assigned_agent_id');
 

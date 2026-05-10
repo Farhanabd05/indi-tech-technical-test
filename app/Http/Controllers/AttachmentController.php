@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use App\Models\Attachment;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class AttachmentController extends Controller
 {
     public function show(Attachment $attachment)
     {
+        Gate::authorize('view', $attachment);
         return response()->file(storage_path('app/public/' . $attachment->path));
     }
 
@@ -18,7 +20,7 @@ class AttachmentController extends Controller
     {
         $request->validate([
             'attachments' => 'required|array',
-            'attachments.*' => 'required|file|max:2048', // Maksimal ukuran berkas adalah 2MB
+            'attachments.*' => 'required|file|max:2048|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx',
         ]);
 
         $attachments = $request->file('attachments');

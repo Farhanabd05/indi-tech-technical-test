@@ -62,7 +62,7 @@
             @endif
         </div>
         <div class="mb-8">
-            @can('assign', $ticket)
+            @if(Gate::allows('assign', $ticket) || Gate::allows('reassign', $ticket))
                 <form action="{{ route('tickets.assign', $ticket) }}" method="POST" class="inline-block">
                     @csrf
                     <label for="agent_id" class="text-sm font-medium text-gray-700">Pendelegasikan ke Agen:</label>
@@ -76,7 +76,7 @@
                     @enderror
                     <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Pendelegasikan</button>
                 </form>
-            @endcan
+            @endif
         </div>
         <!-- Formulir Tambah Komentar -->
         <div class="mb-8">

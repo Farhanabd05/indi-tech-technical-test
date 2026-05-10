@@ -11,14 +11,12 @@ use App\Services\TicketService;
 use App\Enums\TicketStatus;
 use App\Services\ActivityLogService;
 use App\Models\User;
-use App\Notifications\TicketCreatedNotification;
-use Illuminate\Support\Facades\Notification;
 use App\Http\Requests\Ticket\UpdateTicketRequest;
 use App\Models\Label;
-use App\Models\Team;
 use App\Models\Category;
 use App\Models\Priority;
 use App\Services\TicketStatusService;
+use App\Services\ExportService;
 
 class TicketController extends Controller
 {   
@@ -82,49 +80,8 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request, TicketService $ticket_service)
     {
-        // Logika pembuatan nomor tiket akan dipindahkan ke dalam TicketService
-        $ticketNumber = $ticket_service->generateTicketNumber();
-
         $validated = $request->validated();
-        // Proses penyimpanan tiket menggunakan data dari request dan nomor tiket yang dihasilkan
-        $ticket = Ticket::create([
-            'ticket_number' => $ticketNumber,
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'category_id' => $validated['category_id'],
-            'priority_id' => $validated['priority_id'],
-            'status' => TicketStatus::OPEN,
-            'created_by' => Auth::id(),
-            'due_at' => $ticket_service->calculateDueDate($validated['priority_id'])
-        ]);
-
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $path = $file->store('tickets', 'public');
-                $ticket->attachments()->create([
-                    'path' => $path,
-                    'stored_name' => $file->hashName(),
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize(),
-                    'uploaded_by' => Auth::id()
-                ]);
-            }
-        }
-
-        if (isset($validated['label_ids'])) {
-            $ticket->labels()->sync($validated['label_ids']);
-        }
-        ActivityLogService::log(
-            $ticket,
-            Auth::user(),
-            'create_ticket',
-        );
-
-        $adminUsers = User::whereHas('role', function ($query) {
-            $query->where('slug', 'administrator');
-        })->get();
-        Notification::send($adminUsers, new TicketCreatedNotification($ticket));
+        $ticket = $ticket_service->createTicket($validated, Auth::user());
         
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat.');
     }
@@ -152,7 +109,7 @@ class TicketController extends Controller
     }
 
     public function export()
-    {
+     {
         $query = Ticket::query();
 
         // 1. Terapkan filter yang sama persis dengan halaman antarmuka
@@ -170,35 +127,8 @@ class TicketController extends Controller
 
         // 4. Tarik seluruh data (tanpa pagination)
         $tickets = $query->get();
-
-
-        return response()->streamDownload(function () use ($tickets) {
-            $file = fopen('php://output', 'w');
-
-            fputcsv($file, [
-                'ID',
-                'Judul',
-                'Kategori',
-                'Prioritas',
-                'Agen',
-                'Status',
-                'Pembuat',
-                'Tanggal Dibuat',
-            ]);
-            
-            foreach ($tickets as $ticket) {
-                fputcsv($file, [
-                    $ticket->id,
-                    $ticket->title,
-                    $ticket->category->name,
-                    $ticket->priority->name,
-                    $ticket->assignedAgent ? $ticket->assignedAgent->name : 'No Agent',
-                    $ticket->status->label(),
-                    $ticket->creator->name,
-                    $ticket->created_at,
-                ]);
-            }
-            fclose($file);
-            }, 'tickets.csv', ['Content-Type' => 'text/csv'], 'attachment');
-    }
+ 
+        // 5. Serahkan data ke layanan ekspor
+        return (new ExportService())->exportTicketsToCsv($tickets);
+     }
 }

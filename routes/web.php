@@ -65,8 +65,8 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:view,ticket')
         ->name('tickets.show');
     Route::resource('tickets', TicketController::class)->only(['index', 'store', 'update']);
+    // otorisasi ditangani sepenuhnya di AssignTicketRequest
     Route::match(['post', 'patch'], '/tickets/{ticket}/assign', TicketAssignController::class)
-        ->middleware('can:assign,ticket')
         ->name('tickets.assign');
     Route::patch('/tickets/{ticket}/status', [TicketStatusController::class, 'update'])
         ->middleware('can:changeStatus,ticket')

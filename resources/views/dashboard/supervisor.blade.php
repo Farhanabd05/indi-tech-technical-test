@@ -15,6 +15,9 @@
             <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-bold mb-2">Overdue Tickets: {{ $overdueTickets }}</h2>
             </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-xl font-bold mb-2">Escalated Tickets: {{ $escalatedTickets }}</h2>
+            </div>
         </div>
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-xl font-bold mb-4">Agent Performance</h2>

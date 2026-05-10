@@ -26,21 +26,6 @@ describe('Ticket Status Transition', function () {
     });
 
     describe('Valid status transitions', function () {
-        it('allows open to assigned transition', function () {
-            $ticket = createTicket(['status' => TicketStatus::OPEN]);
-            $agent = createUserWithRole('agent');
-
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
-                'status' => TicketStatus::ASSIGNED->value,
-            ]);
-
-            $response->assertRedirect();
-            $this->assertDatabaseHas('tickets', [
-                'id' => $ticket->id,
-                'status' => TicketStatus::ASSIGNED->value,
-            ]);
-        });
-
         it('allows open to closed transition', function () {
             $ticket = createTicket(['status' => TicketStatus::OPEN]);
             $admin = createUserWithRole('administrator');
@@ -57,8 +42,8 @@ describe('Ticket Status Transition', function () {
         });
 
         it('allows assigned to in_progress transition', function () {
-            $ticket = createTicket(['status' => TicketStatus::ASSIGNED]);
             $agent = createUserWithRole('agent');
+            $ticket = createTicket(['status' => TicketStatus::ASSIGNED, 'assigned_agent_id' => $agent->id]);
 
             $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::IN_PROGRESS->value,
@@ -72,8 +57,8 @@ describe('Ticket Status Transition', function () {
         });
 
         it('allows in_progress to resolved transition', function () {
-            $ticket = createTicket(['status' => TicketStatus::IN_PROGRESS]);
             $agent = createUserWithRole('agent');
+            $ticket = createTicket(['status' => TicketStatus::IN_PROGRESS, 'assigned_agent_id' => $agent->id]);
 
             $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::RESOLVED->value,
