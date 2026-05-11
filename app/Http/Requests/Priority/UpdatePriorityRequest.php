@@ -4,8 +4,8 @@ namespace App\Http\Requests\Priority;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Priority;
 
-// Silakan wujudkan kelas StoreCategoryRequest dan UpdateCategoryRequest melalui Artisan untuk menyaring kewajiban pengisian atribut nama kategori
 class UpdatePriorityRequest extends FormRequest
 {
     /**
@@ -13,7 +13,8 @@ class UpdatePriorityRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Mengizinkan semua pengguna untuk melakukan permintaan ini, pembatasan akses akan ditangani oleh middleware atau kebijakan (policy) di lapisan lain.
+        // Contoh untuk Label. Ganti class model sesuai peruntukannya.
+        return $this->user()->can('manage', Priority::class);
     }
 
     /**

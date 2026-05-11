@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
+use App\Models\User;
 
 class RoleController extends Controller
 {
@@ -45,7 +46,7 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         // Periksa apakah ada pengguna yang terkait dengan peran ini
-        if (\App\Models\User::where('role_id', $role->id)->exists()) {
+        if (User::where('role_id', $role->id)->exists()) {
             // Jika ada pengguna yang terkait, tolak penghapusan dan arahkan kembali dengan pesan galat
             return redirect()->route('admin.roles.index')
                              ->with('error', 'Tidak dapat menghapus role ini karena masih ada pengguna yang terkait.');

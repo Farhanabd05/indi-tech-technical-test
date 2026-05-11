@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Enums\ActivityLogAction;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
@@ -53,7 +54,7 @@ class TicketStatusService
             else { $ticket->resolved_at = null; $ticket->closed_at = null; }
             
             $ticket->save();
-            ActivityLogService::log($ticket, $user, 'update_status', $oldStatus->value, $newStatus->value);
+            ActivityLogService::log($ticket, $user, ActivityLogAction::UPDATE_STATUS, $oldStatus->value, $newStatus->value);
  
             // Notifikasi
             if ($newStatus === TicketStatus::RESOLVED) {

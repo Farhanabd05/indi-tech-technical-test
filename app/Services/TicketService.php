@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Notification;
 use App\Models\User;
 use App\Enums\TicketStatus;
 use App\Notifications\TicketAssignedNotification;
+use App\Enums\ActivityLogAction;
 
 class TicketService
 {
@@ -79,7 +80,7 @@ class TicketService
                 'description'   => $data['description'],
                 'category_id'   => $data['category_id'],
                 'priority_id'   => $data['priority_id'],
-                'status'        => \App\Enums\TicketStatus::OPEN,
+                'status'        => TicketStatus::OPEN,
                 'created_by'    => $user->id,
                 'due_at'        => $this->calculateDueDate($data['priority_id'])
             ]);
@@ -95,7 +96,7 @@ class TicketService
             }
 
             // Pindahkan pencatatan log ke sini agar konsisten di Web & API
-            ActivityLogService::log($ticket, $user, 'create_ticket');
+            ActivityLogService::log($ticket, $user, ActivityLogAction::CREATE_TICKET);
             $adminUsers = User::whereHas('role', fn($q) => $q->where('slug', 'administrator'))->get();
             Notification::send($adminUsers, new TicketCreatedNotification($ticket));
 
@@ -121,15 +122,32 @@ class TicketService
     public function assignTicket(Ticket $ticket, ?int $agentId, User $user): Ticket
     {
         return DB::transaction(function () use ($ticket, $agentId, $user) {
+            $newStatus = $ticket->status; 
+            
+            if ($agentId && $ticket->status === TicketStatus::OPEN) {
+                $newStatus = TicketStatus::ASSIGNED;
+            } elseif (!$agentId && in_array($ticket->status, [TicketStatus::ASSIGNED, TicketStatus::IN_PROGRESS, TicketStatus::ESCALATED])) {
+                $newStatus = TicketStatus::OPEN;
+            }
+
             $oldAgentId = $ticket->assigned_agent_id;
             $ticket->update([
                 'assigned_agent_id' => $agentId,
-                'status' => $agentId ? TicketStatus::ASSIGNED : TicketStatus::OPEN,
+                'status' => $newStatus
             ]);
-            ActivityLogService::log($ticket, $user, $oldAgentId ? 'reassign_ticket' : 'assign_ticket', $oldAgentId, $agentId);
+            ActivityLogService::log($ticket, $user, $oldAgentId ? ActivityLogAction::REASSIGN_TICKET : ActivityLogAction::ASSIGN_TICKET, $oldAgentId, $agentId);
             if ($agentId && $ticket->assignedAgent) {
                 $ticket->assignedAgent->notify(new TicketAssignedNotification($ticket));
             }
+            return $ticket;
+        });
+    }
+
+    public function updateTicket(Ticket $ticket, array $data, User $user): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $data, $user) {
+            $ticket->update($data);
+            ActivityLogService::log($ticket, $user, ActivityLogAction::UPDATE_TICKET);
             return $ticket;
         });
     }

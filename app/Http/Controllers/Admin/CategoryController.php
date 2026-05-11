@@ -7,13 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
+use App\Models\Ticket;
 
 class CategoryController extends Controller
 {
     public function destroy(Category $category)
     {
         // Periksa apakah ada tiket yang terkait dengan kategori ini
-        if (\App\Models\Ticket::where('category_id', $category->id)->exists()) {
+        if (Ticket::where('category_id', $category->id)->exists()) {
             // Jika ada tiket yang terkait, tolak penghapusan dan arahkan kembali dengan pesan galat
             return redirect()->route('admin.categories.index')
                              ->with('error', 'Tidak dapat menghapus kategori ini karena masih ada tiket yang terkait.');

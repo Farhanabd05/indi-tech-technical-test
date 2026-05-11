@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Role;
 use App\Enums\TicketStatus;
+use Illuminate\Support\Collection;
 use Carbon\Carbon;
 
 class SupervisorDashboardController extends Controller
@@ -53,13 +54,14 @@ class SupervisorDashboardController extends Controller
             ->get();
 
         // Menghitung waktu resolusi rata-rata PER AGEN menggunakan Laravel Collection
-        $averageResolutionTime = (clone $queryBase)
-            ->whereIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED])
-            ->whereNotNull('resolved_at')
-            ->selectRaw('assigned_agent_id, AVG(TIME_TO_SEC(resolved_at - created_at)) as average_resolution_time')
-            ->groupBy('assigned_agent_id')
-            ->get()
-            ->pluck('average_resolution_time', 'assigned_agent_id')
+        $averageResolutionTime = $resolvedTickets->groupBy('assigned_agent_id')
+            ->map(function ($group) {
+                $totalDuration = $group->sum(function ($ticket) {
+                    return Carbon::parse($ticket->resolved_at)->diffInSeconds(Carbon::parse($ticket->created_at));
+                });
+                $count = $group->count();
+                return $count > 0 ? $totalDuration / $count : 0;
+            })
             ->toArray();
 
         // Melempar data ke antarmuka pengguna

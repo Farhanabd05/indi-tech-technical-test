@@ -7,7 +7,7 @@ use App\Models\Ticket;
 use App\Http\Requests\Ticket\AssignTicketRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Services\TicketService;
-
+use Illuminate\Support\Facades\Log;
 class TicketAssignController extends Controller
 {
     /**
@@ -15,7 +15,12 @@ class TicketAssignController extends Controller
      */
     public function __invoke(AssignTicketRequest $request, Ticket $ticket, TicketService $ticketService)
     {
-        $ticketService->assignTicket($ticket, $request->validated()['assigned_agent_id'] ?? null, Auth::user());
-        return redirect()->back();
+        try {
+            $ticketService->assignTicket($ticket, $request->validated()['assigned_agent_id'] ?? null, Auth::user());
+            return redirect()->back();
+        } catch (\Exception $e) {
+            Log::error('An error occurred while assigning a ticket: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while assigning a ticket. Please try again later.'], 500);
+        }
     }
 }

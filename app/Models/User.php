@@ -43,15 +43,10 @@ class User extends Authenticatable
 
     public function hasRole($roles): bool
     {
-        if (!is_array($roles)) {
-            $roles = [$roles];
-        }
-
-        $roles = array_map(fn ($role) => $role === 'admin' ? 'administrator' : $role, $roles);
-
+        // mastiin input selalu berupa array, baik dikirim string tunggal maupun array
+        $roles = (array) $roles;
         return in_array($this->role?->slug, $roles);
     }
-
     public function isCustomer(): bool
     {
         return $this->hasRole('customer');

@@ -157,4 +157,29 @@ class Ticket extends Model
             });
         }
     }
+
+    public function scopeVisibleTo($query, User $user)
+    {
+        if ($user->hasRole('administrator')) {
+            return $query;
+        }
+
+        if ($user->hasRole('supervisor')) {
+            // Membatasi akses Penyelia hanya untuk agen dalam timnya
+            return $query->whereHas('assignedAgent', function ($q) use ($user) {
+                $q->where('team_id', $user->team_id);
+            });
+        }
+
+        if ($user->hasRole('agent')) {
+            return $query->where('assigned_agent_id', $user->id);
+        }
+
+        if ($user->hasRole('customer')) {
+            return $query->where('created_by', $user->id);
+        }
+
+        // Tutup semua akses jika peran tidak dikenali
+        return $query->whereRaw('1 = 0');
+    }
 }

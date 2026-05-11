@@ -5,7 +5,7 @@ namespace App\Http\Requests\Category;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-// Silakan wujudkan kelas StoreCategoryRequest dan UpdateCategoryRequest melalui Artisan untuk menyaring kewajiban pengisian atribut nama kategori
+use App\Models\Category;
 class UpdateCategoryRequest extends FormRequest
 {
     /**
@@ -13,7 +13,7 @@ class UpdateCategoryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Mengizinkan semua pengguna untuk melakukan permintaan ini, pembatasan akses akan ditangani oleh middleware atau kebijakan (policy) di lapisan lain.
+        return $this->user()->can('manage', Category::class);
     }
 
     /**

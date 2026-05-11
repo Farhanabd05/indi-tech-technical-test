@@ -15,7 +15,10 @@ class StoreCommentRequest extends FormRequest
      */
     public function authorize(): bool 
     {
-        if (Auth::user()?->role?->slug === 'customer' && $this->boolean('is_internal')) {
+         /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user?->hasRole('customer') && $this->boolean('is_internal')) {
             return false;
         }
 

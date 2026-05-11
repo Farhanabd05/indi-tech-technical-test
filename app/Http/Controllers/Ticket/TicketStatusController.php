@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Enums\TicketStatus;
 use App\Services\TicketStatusService;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class TicketStatusController extends Controller
 {
@@ -19,6 +20,7 @@ class TicketStatusController extends Controller
             $statusService->changeStatus($ticket, TicketStatus::from($request->validated()['status']), Auth::user());
             return redirect()->back()->with('success', 'Status berhasil diubah.');
         } catch (\Exception $e) {
+            Log::error("Error changing ticket status: " . $e->getMessage());
             return back()->withErrors(['status' => $e->getMessage()]);
         }
     }

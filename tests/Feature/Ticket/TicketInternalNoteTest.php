@@ -358,9 +358,21 @@ describe('Ticket Internal Note', function () {
         it('allows admin to view internal comments via policy', function () {
             $admin = createUserWithRole('administrator');
 
+            // Tambahkan pembuatan tiket ini agar tidak terjadi 'phantom data'
+            $ticket = Ticket::create([
+                'ticket_number' => 'TCK-' . date('Y') . '-000002',
+                'title' => 'Admin Policy Test',
+                'description' => 'Testing admin comment policy',
+                'category_id' => $this->category->id,
+                'priority_id' => $this->priority->id,
+                'status' => TicketStatus::ASSIGNED,
+                'created_by' => $admin->id,
+                'due_at' => now()->addDays(3),
+            ]);
+
             $internalComment = Comment::create([
-                'ticket_id' => 1,
-                'user_id' => 1,
+                'ticket_id' => $ticket->id, 
+                'user_id' => $admin->id,
                 'body' => 'Admin can see this',
                 'is_internal' => true,
             ]);

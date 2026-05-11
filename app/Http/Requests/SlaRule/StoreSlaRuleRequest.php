@@ -2,10 +2,10 @@
 
 namespace App\Http\Requests\SlaRule;
 
+use App\Models\SlaRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-//Silakan wujudkan kelas StoreCategoryRequest dan UpdateCategoryRequest melalui Artisan untuk menyaring kewajiban pengisian atribut nama kategori
 class StoreSlaRuleRequest extends FormRequest
 {
     /**
@@ -13,7 +13,7 @@ class StoreSlaRuleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Mengizinkan semua pengguna untuk melakukan permintaan ini, pembatasan akses akan ditangani oleh middleware atau kebijakan (policy) di lapisan lain.
+        return $this->user()->can('manage', SlaRule::class);
     }
 
     /**

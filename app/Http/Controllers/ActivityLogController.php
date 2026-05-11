@@ -11,13 +11,15 @@ class ActivityLogController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->role->slug == 'administrator') {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($user->hasRole('administrator')) {
             $logs = ActivityLog::with(['ticket', 'user'])->orderBy('created_at', 'desc')->paginate(10);
         }
 
-        if (Auth::user()->role->slug == 'supervisor') {
+        if ($user->hasRole('supervisor')) {
             // 1. Kumpulkan daftar ID agen dalam satu tim penyelia
-            $agentIds = User::where('team_id', Auth::user()->team_id)
+            $agentIds = User::where('team_id', $user->team_id)
                             ->whereHas('role', function ($q) {
                                 $q->where('slug', 'agent');
                             })

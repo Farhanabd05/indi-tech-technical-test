@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
-use \App\Enums\TicketStatus;
+use App\Enums\TicketStatus;
 class TicketPolicy
 {
     /**
@@ -21,7 +21,7 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('administrator')) {
             return true;
         }   
 
@@ -39,7 +39,7 @@ class TicketPolicy
 
     public function comment(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['admin', 'supervisor'])) {
+        if ($user->hasRole(['administrator', 'supervisor'])) {
             return true;
         }   
 
@@ -56,7 +56,7 @@ class TicketPolicy
      */
     public function create(User $user): bool
     {
-        if ($user->hasRole(['admin', 'customer'])) {
+        if ($user->hasRole(['administrator', 'customer'])) {
             return true;
         }   
         return false;
@@ -68,7 +68,7 @@ class TicketPolicy
     public function update(User $user, Ticket $ticket): bool
     {
         // Admin: "Create, edit, and manage tickets"
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('administrator')) {
             return true;
         }
 
@@ -82,8 +82,12 @@ class TicketPolicy
      */
     public function changeStatus(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole(['administrator', 'agent'])) {
+        if ($user->hasRole('administrator')) {
             return true;
+        }
+
+        if ($user->hasRole('agent')) {
+            return $ticket->assigned_agent_id === $user->id;
         }
 
         if ($user->hasRole('customer')) {
@@ -102,29 +106,34 @@ class TicketPolicy
     {
         // Spesifikasi: Customer, Agent, Supervisor "CANNOT delete tickets"
         // Hanya Admin yang bisa (sebagai bagian dari 'manage tickets')
-        return $user->hasRole('admin');
+        return $user->hasRole('administrator');
     }
 
-    /**
-     * Menentukan apakah pengguna bisa melihat Internal Notes.
-     */
     public function viewInternalNotes(User $user, Ticket $ticket): bool
     {
-        // Customer: "NEVER see internal notes"
-        return $user->hasRole(['admin', 'supervisor', 'agent']);
+        if ($user->hasRole('administrator')) {
+            return true;
+        }   
+        if ($user->hasRole('supervisor')) {
+            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
+        }
+        if ($user->hasRole('agent')) {
+            return $ticket->assigned_agent_id === $user->id;
+        }
+        return false;
     }
 
     public function assign(User $user, Ticket $ticket): bool
     {
-        return $user->hasRole(['admin']);
+        return $user->hasRole(['administrator']);
     }
 
     public function reassign(User $user, Ticket $ticket): bool
     {
-        if ($user->role->slug === 'supervisor') {
+        if ($user->hasRole('supervisor')) {
             return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
         }
-        return $user->role->slug === 'administrator';
+        return $user->hasRole('administrator');
     }
 
     public function upload(User $user, Ticket $ticket): bool

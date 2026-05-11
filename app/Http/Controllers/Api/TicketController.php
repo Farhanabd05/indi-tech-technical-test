@@ -15,19 +15,23 @@ use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 use App\Services\ActivityLogService;
 use App\Enums\TicketStatus;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Ticket\TicketFilterRequest;
 
 class TicketController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(TicketFilterRequest $request): AnonymousResourceCollection
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        $tickets = Ticket::with(['priority', 'category', 'creator', 'assignedAgent', 'labels'])
-            ->when($user->isCustomer(), fn($q) => $q->where('created_by', $user->id))
-            ->when($user->isAgent(), fn($q) => $q->where('assigned_agent_id', $user->id))
-            ->latest()
-            ->paginate(10);
+        $query = Ticket::visibleTo($user)
+            ->with(['priority', 'category', 'creator', 'assignedAgent', 'labels']);
+
+        // Apply the filter from the request
+        $query->filter($request->only(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
+
+        $tickets = $query->latest()->paginate(10);
 
         return TicketResource::collection($tickets);
     }
@@ -59,6 +63,7 @@ class TicketController extends Controller
             $statusService->changeStatus($ticket, TicketStatus::from($request->validated()['status']), Auth::user());
             return (new TicketResource($ticket))->response()->setStatusCode(200);
         } catch (\Exception $e) {
+            Log::error("Error changing ticket status: " . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }

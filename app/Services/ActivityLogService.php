@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-
+use App\Enums\ActivityLogAction;
 class ActivityLogService
 {
     /**
@@ -15,11 +15,11 @@ class ActivityLogService
      *
      * @param Ticket $ticket
      * @param mixed $user Entitas pengguna
-     * @param string $action Nama aksi
+     * @param ActivityLogAction $action
      * @param mixed $oldValue
      * @param mixed $newValue
      */
-    public static function log(Ticket $ticket, ?User $user, string $action, $oldValue = null, $newValue = null): void
+    public static function log(Ticket $ticket, ?User $user, ActivityLogAction $action, $oldValue = null, $newValue = null): void
     {
         // Buat sebuah logika sebelum baris ActivityLog::create untuk mengubah data mixed tersebut menjadi teks biasa. (Petunjuk: Anda bisa memeriksa apakah data tersebut adalah objek tipe BackedEnum menggunakan instanceof \BackedEnum untuk mengambil nilai ->value-nya, atau menggunakan json_encode jika datanya berbentuk array).
         if ($oldValue instanceof \BackedEnum) {
@@ -39,7 +39,7 @@ class ActivityLogService
             ActivityLog::create([
                 'ticket_id'   => $ticket->id,
                 'user_id'     => $user ? $user->id : null,
-                'action'      => $action,
+                'action'      => $action->value,
                 'old_value'   => $oldValue,
                 'new_value'   => $newValue,
             ]);

@@ -9,6 +9,6 @@ class CommentPolicy
 {
     public function viewInternal(User $user, Comment $comment): bool
     {
-        return $user->hasRole(['administrator', 'supervisor', 'agent']);
+        return $user->can('viewInternalNotes', $comment->ticket);
     }
 }

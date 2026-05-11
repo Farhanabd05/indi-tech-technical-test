@@ -10,6 +10,11 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Enums\TicketStatus;
 use App\Notifications\SlaOverdueNotification;
+use App\Services\ActivityLogService;
+use Illuminate\Support\Facades\Auth;
+use App\Enums\ActivityLogAction;
+// db buat transaction
+use Illuminate\Support\Facades\DB;
 
 #[Signature('tickets:check-overdue')]
 #[Description('Command description')]
@@ -31,13 +36,12 @@ class CheckOverdueTicketsCommand extends Command
             $query->whereIn('slug', ['supervisor', 'administrator']);
         })->get();
 
-        // 3. Perulangan untuk setiap tiket bermasalah
         foreach ($overdueTickets as $ticket) {
-            // Kirim notifikasi ke pengguna yang relevan
-            Notification::send($usersToNotify, new SlaOverdueNotification($ticket));
-
-            // Tandai tiket dengan waktu saat ini untuk mencegah pengiriman berulang
-            $ticket->update(['overdue_notified_at' => now()]);
+            DB::transaction(function () use ($ticket, $usersToNotify) {
+                Notification::send($usersToNotify, new SlaOverdueNotification($ticket));
+                $ticket->update(['overdue_notified_at' => now(), 'status' => TicketStatus::ESCALATED->value]);
+                ActivityLogService::log($ticket, null, ActivityLogAction::SLA_OVERDUE);
+            });
         }
 
         $this->info('Overdue tickets have been checked and notifications sent if necessary.');

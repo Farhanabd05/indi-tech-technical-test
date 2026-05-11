@@ -11,6 +11,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Role;
 use App\Models\Ticket;
+use App\Models\Team;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
@@ -41,15 +42,15 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = \App\Models\User::with(['role', 'team'])->paginate(10);
+        $users = User::with(['role', 'team'])->paginate(10);
         return view('admin.users.index', compact('users'));
     }
 
 
     public function create()
     {
-        $roles = \App\Models\Role::all();
-        $teams = \App\Models\Team::all();
+        $roles = Role::all();
+        $teams = Team::all();
         return view('admin.users.create', compact('roles', 'teams'));
     }
 
@@ -104,10 +105,10 @@ class UserController extends Controller
                          ->with('success', 'Pengguna berhasil diperbarui.');
     }
 
-    public function edit(\App\Models\User $user)
+    public function edit(User $user)
     {
-        $roles = \App\Models\Role::all();
-        $teams = \App\Models\Team::all();
+        $roles = Role::all();
+        $teams = Team::all();
         return view('admin.users.edit', compact('user', 'roles', 'teams'));
     }
 }

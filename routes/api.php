@@ -13,8 +13,10 @@ Route::get('/user', function (Request $request) {
 
 // Middleware auth:sanctum memastikan hanya pembawa token yang bisa lewat
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/tickets', [TicketController::class, 'index']);
-    Route::post('/tickets', [TicketController::class, 'store']); // Tambahkan baris ini
-    Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
-    Route::patch('/tickets/{ticket}/status', [TicketController::class, 'changeStatus']);
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::get('/tickets', [TicketController::class, 'index']);
+        Route::post('/tickets', [TicketController::class, 'store']);
+        Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
+        Route::patch('/tickets/{ticket}/status', [TicketController::class, 'changeStatus']);
+    });
 });

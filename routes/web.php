@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\LabelController;
 use App\Http\Controllers\Ticket\TicketStatusController;
 use App\Http\Controllers\Ticket\TicketAssignController;
-use \App\Http\Controllers\CommentController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\Admin\PriorityController;
 use App\Http\Controllers\Admin\SlaRuleController;
 use App\Http\Controllers\Dashboard\DashboardController;

@@ -120,9 +120,9 @@ describe('Ticket Status Transition', function () {
     describe('Invalid status transitions', function () {
         it('denies open to in_progress transition', function () {
             $ticket = createTicket(['status' => TicketStatus::OPEN]);
-            $agent = createUserWithRole('agent');
+            $admin = createUserWithRole('administrator');
 
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+            $response = $this->actingAs($admin)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::IN_PROGRESS->value,
             ]);
 
@@ -135,9 +135,9 @@ describe('Ticket Status Transition', function () {
 
         it('denies assigned to open transition', function () {
             $ticket = createTicket(['status' => TicketStatus::ASSIGNED]);
-            $agent = createUserWithRole('agent');
+            $admin = createUserWithRole('administrator');
 
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+            $response = $this->actingAs($admin)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::OPEN->value,
             ]);
 
@@ -150,9 +150,9 @@ describe('Ticket Status Transition', function () {
 
         it('denies resolved to in_progress transition', function () {
             $ticket = createTicket(['status' => TicketStatus::RESOLVED]);
-            $agent = createUserWithRole('agent');
+            $admin = createUserWithRole('administrator');
 
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+            $response = $this->actingAs($admin)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::IN_PROGRESS->value,
             ]);
 
@@ -180,9 +180,9 @@ describe('Ticket Status Transition', function () {
 
         it('denies closed to resolved transition', function () {
             $ticket = createTicket(['status' => TicketStatus::CLOSED]);
-            $agent = createUserWithRole('agent');
+            $admin = createUserWithRole('administrator');
 
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+            $response = $this->actingAs($admin)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::RESOLVED->value,
             ]);
 
@@ -195,9 +195,9 @@ describe('Ticket Status Transition', function () {
 
         it('denies in_progress to open transition', function () {
             $ticket = createTicket(['status' => TicketStatus::IN_PROGRESS]);
-            $agent = createUserWithRole('agent');
+            $admin = createUserWithRole('administrator');
 
-            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+            $response = $this->actingAs($admin)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::OPEN->value,
             ]);
 

@@ -6,7 +6,7 @@
         @can('create', App\Models\Ticket::class)
             <a href="{{ route('tickets.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Buat Tiket Baru</a>
         @endcan
-        @if (Auth::user()->role->slug === 'administrator' || Auth::user()->role->slug === 'supervisor')
+        @if (Auth::user()->hasRole(['administrator', 'supervisor']))
             <a href="{{ route('tickets.export', request()->query()) }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Ekspor CSV</a>
         @endif
     </div>

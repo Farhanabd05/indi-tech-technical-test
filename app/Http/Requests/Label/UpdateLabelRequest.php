@@ -5,6 +5,7 @@ namespace App\Http\Requests\Label;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Label;
 class UpdateLabelRequest extends FormRequest
 {
     /**
@@ -12,7 +13,7 @@ class UpdateLabelRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true; // Mengizinkan semua pengguna untuk melakukan permintaan ini, pembatasan akses akan ditangani oleh middleware atau kebijakan (policy) di lapisan lain.
+        return $this->user()->can('manage', Label::class);
     }
 
     /**

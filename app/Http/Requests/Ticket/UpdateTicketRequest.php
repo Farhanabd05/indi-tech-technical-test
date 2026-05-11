@@ -33,8 +33,9 @@ class UpdateTicketRequest extends FormRequest
             'priority_id' => ['sometimes', 'required', 'integer', 'exists:priorities,id'],
             'assigned_agent_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
-
-        if (Auth::user()->role->slug !== 'admin' && Auth::user()->role->slug !== 'supervisor') {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->hasRole(['administrator', 'supervisor'])) {
             unset($rules['assigned_agent_id']);
         }
 

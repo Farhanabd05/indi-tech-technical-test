@@ -17,11 +17,16 @@ use App\Models\Category;
 use App\Models\Priority;
 use App\Services\TicketStatusService;
 use App\Services\ExportService;
+use App\Enums\ActivityLogAction;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\Ticket\TicketFilterRequest;
 
 class TicketController extends Controller
 {   
     public function show(Ticket $ticket)
     {
+        /** @var \App\Models\User */
+        $user = Auth::user();
         Gate::authorize('view', $ticket);
         $statuses = (new TicketStatusService())->allowedNextStatuses($ticket->status);
 
@@ -39,34 +44,23 @@ class TicketController extends Controller
             $q->where('slug', 'agent');
         });
 
-        if (Auth::user()->role->slug === 'supervisor') {
-            $agentsQuery->where('team_id', Auth::user()->team_id);
+        if ($user->hasRole('supervisor')) {
+            $agentsQuery->where('team_id', $user->team_id);
         }
 
         $agents = $agentsQuery->get();
         return view('tickets.show', compact('ticket', 'statuses', 'agents'));
     }
 
-    public function index()
+    public function index(TicketFilterRequest $request)
     {
+        /** @var \App\Models\User */
+        $user = Auth::user();
         Gate::authorize('viewAny', Ticket::class);
-
         $query = Ticket::query();
+        $query->filter($request->only(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
 
-        $query->filter(request(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
-
-        if (Auth::user()->role->slug === 'agent') {
-            $query->where('assigned_agent_id', Auth::user()->id);
-        } elseif (Auth::user()->role->slug === 'customer') {
-            $query->where('created_by', Auth::user()->id);
-        } elseif (Auth::user()->role->slug === 'supervisor') {
-            $agentIds = User::where('team_id', Auth::user()->team_id)
-                        ->whereHas('role', function ($q) {
-                            $q->where('slug', 'agent');
-                        })->pluck('id');
-
-            $query->whereIn('assigned_agent_id', $agentIds);
-        }
+        $query->visibleTo($user);
 
         $tickets = $query->paginate(10);
         $statuses = TicketStatus::cases();
@@ -80,22 +74,26 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request, TicketService $ticket_service)
     {
-        $validated = $request->validated();
-        $ticket = $ticket_service->createTicket($validated, Auth::user());
-        
-        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat.');
+        try {
+            /** @var \App\Models\User */
+            $user = Auth::user();
+            $validated = $request->validated();
+            $ticket = $ticket_service->createTicket($validated, $user);
+            
+            return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat.');
+        } catch (\Exception $e) {
+            Log::error('An error occurred while storing a ticket: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while storing a ticket. Please try again later.'], 500);
+        }
     }
+
     public function update(UpdateTicketRequest $request, Ticket $ticket)
     {
+        /** @var \App\Models\User */
+        $user = Auth::user();
         $validated = $request->validated();
-        $ticket->update($validated);
-
-        ActivityLogService::log(
-            $ticket,
-            Auth::user(),
-            'update_ticket',
-        );
-
+        $ticket_service = new TicketService();
+        $ticket_service->updateTicket($ticket, $validated, $user);
         return redirect()->route('tickets.show', $ticket)->with('success', 'Tiket berhasil diperbarui.');
     }
 
@@ -108,27 +106,31 @@ class TicketController extends Controller
         return view('tickets.create', compact('categories', 'priorities', 'labels'));
     }
 
-    public function export()
-     {
+    public function export(TicketFilterRequest $request)
+    {
+        /** @var \App\Models\User */
+        $user = Auth::user();
         $query = Ticket::query();
 
         // 1. Terapkan filter yang sama persis dengan halaman antarmuka
-        $query->filter(request(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
+        $query->filter($request->only(['status', 'priority_id', 'category_id', 'assigned_agent_id', 'label_id', 'created_from', 'created_to', 'due_from', 'due_to', 'overdue', 'search', 'sort_by', 'sort_direction']));
 
         // 2. Muat relasi yang valid untuk mencegah N+1 Query
         $query->with(['category', 'priority', 'labels', 'assignedAgent', 'creator']);
-        
-        // 3. Batasi akses penyelia hanya untuk timnya sendiri menggunakan relasi
-        if (Auth::user()->role->slug === 'supervisor') {
-            $query->whereHas('assignedAgent', function ($q) {
-                $q->where('team_id', Auth::user()->team_id);
-            });
+
+        $query->visibleTo($user);
+
+        // 3. Count the number of tickets to check if it exceeds the limit
+        $ticketCount = $query->count();
+        if ($ticketCount > 1000) {
+            // Redirect back with an error message
+            return back()->withErrors(['TooManyTickets' => 'Data terlalu besar, maksimal 1000 tiket']);
         }
 
         // 4. Tarik seluruh data (tanpa pagination)
         $tickets = $query->get();
- 
+
         // 5. Serahkan data ke layanan ekspor
         return (new ExportService())->exportTicketsToCsv($tickets);
-     }
+    }
 }
