@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Enums\TicketStatus;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
 {
@@ -63,11 +63,7 @@ class AdminDashboardController extends Controller
         // Average resolution: only tickets with `resolved_at`.
         $averageResolution = (clone $queryBase)
             ->whereNotNull('resolved_at')
-            ->get()
-            ->avg(function ($ticket) {
-                $resolvedAt = Carbon::parse($ticket->resolved_at);
-                return $ticket->created_at->diffInHours($resolvedAt);
-            });
+            ->avg(DB::raw($this->resolutionMinutesExpression())) ?? 0;
 
         
         return view('dashboard.admin', compact(
@@ -81,5 +77,15 @@ class AdminDashboardController extends Controller
             'topAgents',
             'averageResolution'
         ));
+    }
+
+    private function resolutionMinutesExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => '(TIMESTAMPDIFF(MINUTE, created_at, resolved_at) - COALESCE(total_paused_duration_minutes, 0))',
+            'pgsql' => '((EXTRACT(EPOCH FROM (resolved_at - created_at)) / 60) - COALESCE(total_paused_duration_minutes, 0))',
+            'sqlsrv' => '(DATEDIFF(minute, created_at, resolved_at) - COALESCE(total_paused_duration_minutes, 0))',
+            default => "(((strftime('%s', resolved_at) - strftime('%s', created_at)) / 60.0) - COALESCE(total_paused_duration_minutes, 0))",
+        };
     }
 }

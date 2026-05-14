@@ -17,12 +17,16 @@
                 @foreach ($logs as $log)
                     <tr>
                         <td class="border px-4 py-2 text-blue-600 hover:text-blue-800 underline">
-                            <a href="{{ route('tickets.show', $log->ticket) }}">
-                                {{ $log->ticket->ticket_number }}
-                            </a>
+                            @if($log->ticket)
+                                <a href="{{ route('tickets.show', $log->ticket) }}">
+                                    {{ $log->ticket->ticket_number }}
+                                </a>
+                            @else
+                                Tiket sudah dihapus
+                            @endif
                         </td>
-                        <td class="border px-4 py-2">{{ $log->ticket->title }}</td>
-                        <td class="border px-4 py-2">{{ $log->user->name }}</td>
+                        <td class="border px-4 py-2">{{ $log->ticket?->title ?? 'Tiket sudah dihapus' }}</td>
+                        <td class="border px-4 py-2">{{ $log->user ? $log->user->name : 'System' }}</td>
                         <td class="border px-4 py-2">{{ $log->created_at }}</td>
                         <td class="border px-4 py-2">
                             @switch($log->action)
@@ -42,8 +46,28 @@
                                     Komentar telah ditambahkan
                                 @break
 
-                                @case('assign_agent')
+                                @case('assign_ticket')
                                     Tiket di-assign kepada {{ $log->assigned_agent_name }}
+                                @break
+
+                                @case('reassign_ticket')
+                                    Tiket di-reassign kepada {{ $log->assigned_agent_name }}
+                                @break
+
+                                @case('delete_ticket')
+                                    Tiket telah dihapus
+                                @break
+
+                                @case('upload_attachment')
+                                    Lampiran {{ $log->new_value }} telah diunggah
+                                @break
+
+                                @case('delete_attachment')
+                                    Lampiran {{ $log->old_value }} telah dihapus
+                                @break
+
+                                @case('sla_overdue')
+                                    SLA tiket telah melewati batas waktu
                                 @break
 
                                 @default

@@ -18,6 +18,7 @@ use App\Models\Priority;
 use App\Services\TicketStatusService;
 use App\Services\ExportService;
 use App\Enums\ActivityLogAction;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\Ticket\TicketFilterRequest;
 
@@ -95,6 +96,21 @@ class TicketController extends Controller
         $ticket_service = new TicketService();
         $ticket_service->updateTicket($ticket, $validated, $user);
         return redirect()->route('tickets.show', $ticket)->with('success', 'Tiket berhasil diperbarui.');
+    }
+
+    public function destroy(Ticket $ticket)
+    {
+        Gate::authorize('delete', $ticket);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        DB::transaction(function () use ($ticket, $user) {
+            ActivityLogService::log($ticket, $user, ActivityLogAction::DELETE_TICKET);
+            $ticket->delete();
+        });
+
+        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dihapus.');
     }
 
     // creata

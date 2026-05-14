@@ -26,8 +26,7 @@ class CheckOverdueTicketsCommand extends Command
     public function handle()
     {
         // 1. Kueri untuk mencari tiket terlambat
-        $overdueTickets = Ticket::where('due_at', '<', now())
-            ->whereNotIn('status', [TicketStatus::RESOLVED->value, TicketStatus::CLOSED->value])
+        $overdueTickets = Ticket::overdue()
             ->whereNull('overdue_notified_at')
             ->get();
 

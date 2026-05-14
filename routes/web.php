@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/{ticket}', [TicketController::class, 'show'])
         ->middleware('can:view,ticket')
         ->name('tickets.show');
-    Route::resource('tickets', TicketController::class)->only(['index', 'store', 'update']);
+    Route::resource('tickets', TicketController::class)->only(['index', 'store', 'update', 'destroy']);
     // otorisasi ditangani sepenuhnya di AssignTicketRequest
     Route::match(['post', 'patch'], '/tickets/{ticket}/assign', TicketAssignController::class)
         ->name('tickets.assign');
@@ -75,6 +75,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:comment,ticket')
         ->name('tickets.comments.store');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
+    Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
     // hanya admin dan supervisor yang bisa akses
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])
         ->middleware(['role:administrator,supervisor'])

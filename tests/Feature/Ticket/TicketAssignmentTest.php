@@ -174,6 +174,49 @@ describe('Ticket Assignment', function () {
                 'assigned_agent_id' => $initialAgent->id,
                 'due_at' => now()->addDays(3),
             ]);
+
+            $response = $this->actingAs($supervisor)->patch(route('tickets.assign', $ticket), [
+                'assigned_agent_id' => $agent->id,
+            ]);
+
+            $response->assertStatus(403);
+            $this->assertDatabaseHas('tickets', [
+                'id' => $ticket->id,
+                'assigned_agent_id' => $initialAgent->id,
+            ]);
+        });
+
+        it('prevents supervisor from assigning an unassigned ticket', function () {
+            $supervisor = createUserWithRole('supervisor');
+            $team = Team::create(['name' => 'Support Team A']);
+            $supervisor->update(['team_id' => $team->id]);
+
+            $agent = createUserWithRole('agent');
+            $agent->update(['team_id' => $team->id]);
+
+            $customer = createUserWithRole('customer');
+
+            $ticket = Ticket::create([
+                'ticket_number' => 'TCK-' . date('Y') . '-000004',
+                'title' => 'Unassigned Supervisor Ticket',
+                'description' => 'Supervisor should not directly assign this',
+                'category_id' => $this->category->id,
+                'priority_id' => $this->priority->id,
+                'status' => TicketStatus::OPEN,
+                'created_by' => $customer->id,
+                'assigned_agent_id' => null,
+                'due_at' => now()->addDays(3),
+            ]);
+
+            $response = $this->actingAs($supervisor)->patch(route('tickets.assign', $ticket), [
+                'assigned_agent_id' => $agent->id,
+            ]);
+
+            $response->assertStatus(403);
+            $this->assertDatabaseHas('tickets', [
+                'id' => $ticket->id,
+                'assigned_agent_id' => null,
+            ]);
         });
     });
 

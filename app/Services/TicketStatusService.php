@@ -45,12 +45,25 @@ class TicketStatusService
         }
  
         return DB::transaction(function () use ($ticket, $newStatus, $user) {
+            $now = now();
             $oldStatus = $ticket->status;
             $ticket->status = $newStatus;
+
+            if ($oldStatus === TicketStatus::WAITING_FOR_CUSTOMER && $newStatus !== TicketStatus::WAITING_FOR_CUSTOMER) {
+                $this->resumeSla($ticket, $now);
+            }
+
+            if ($newStatus === TicketStatus::WAITING_FOR_CUSTOMER) {
+                $this->pauseSla($ticket, $now);
+            }
+
+            if ($newStatus === TicketStatus::REOPENED) {
+                $this->restartSla($ticket);
+            }
  
             // Update timestamps
-            if ($newStatus === TicketStatus::RESOLVED) $ticket->resolved_at = now();
-            elseif ($newStatus === TicketStatus::CLOSED) $ticket->closed_at = now();
+            if ($newStatus === TicketStatus::RESOLVED) $ticket->resolved_at = $now;
+            elseif ($newStatus === TicketStatus::CLOSED) $ticket->closed_at = $now;
             else { $ticket->resolved_at = null; $ticket->closed_at = null; }
             
             $ticket->save();
@@ -65,5 +78,36 @@ class TicketStatusService
             }
             return $ticket;
         });
+    }
+
+    private function pauseSla(Ticket $ticket, $now): void
+    {
+        if ($ticket->sla_paused_at === null) {
+            $ticket->sla_paused_at = $now;
+        }
+    }
+
+    private function resumeSla(Ticket $ticket, $now): void
+    {
+        if ($ticket->sla_paused_at === null) {
+            return;
+        }
+
+        $pausedMinutes = (int) $ticket->sla_paused_at->diffInMinutes($now);
+
+        $ticket->total_paused_duration_minutes = ((int) $ticket->total_paused_duration_minutes) + $pausedMinutes;
+        $ticket->sla_paused_at = null;
+
+        if ($ticket->due_at !== null && $pausedMinutes > 0) {
+            $ticket->due_at = $ticket->due_at->copy()->addMinutes($pausedMinutes);
+        }
+    }
+
+    private function restartSla(Ticket $ticket): void
+    {
+        $ticket->due_at = app(TicketService::class)->calculateDueDate($ticket->priority_id);
+        $ticket->sla_paused_at = null;
+        $ticket->total_paused_duration_minutes = 0;
+        $ticket->overdue_notified_at = null;
     }
 }

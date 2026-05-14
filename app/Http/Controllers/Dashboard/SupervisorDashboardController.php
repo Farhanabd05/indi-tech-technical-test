@@ -9,8 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Role;
 use App\Enums\TicketStatus;
-use Illuminate\Support\Collection;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SupervisorDashboardController extends Controller
 {
@@ -47,21 +46,13 @@ class SupervisorDashboardController extends Controller
             ->with('assignedAgent') // Eager loading the assignedAgent relationship
             ->get();
 
-        // Menarik tiket terselesaikan tanpa groupBy di SQL agar semua tiket terambil
-        $resolvedTickets = (clone $queryBase)
+        $averageResolutionTime = (clone $queryBase)
+            ->selectRaw('assigned_agent_id, AVG(' . $this->resolutionMinutesExpression() . ') as average_resolution_minutes')
             ->whereIn('status', [TicketStatus::RESOLVED, TicketStatus::CLOSED])
             ->whereNotNull('resolved_at')
-            ->get();
-
-        // Menghitung waktu resolusi rata-rata PER AGEN menggunakan Laravel Collection
-        $averageResolutionTime = $resolvedTickets->groupBy('assigned_agent_id')
-            ->map(function ($group) {
-                $totalDuration = $group->sum(function ($ticket) {
-                    return Carbon::parse($ticket->resolved_at)->diffInSeconds(Carbon::parse($ticket->created_at));
-                });
-                $count = $group->count();
-                return $count > 0 ? $totalDuration / $count : 0;
-            })
+            ->groupBy('assigned_agent_id')
+            ->pluck('average_resolution_minutes', 'assigned_agent_id')
+            ->map(fn ($minutes) => (float) $minutes)
             ->toArray();
 
         // Melempar data ke antarmuka pengguna
@@ -73,5 +64,15 @@ class SupervisorDashboardController extends Controller
             'agentWorkload',
             'averageResolutionTime'
         ));
+    }
+
+    private function resolutionMinutesExpression(): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'mysql', 'mariadb' => '(TIMESTAMPDIFF(MINUTE, created_at, resolved_at) - COALESCE(total_paused_duration_minutes, 0))',
+            'pgsql' => '((EXTRACT(EPOCH FROM (resolved_at - created_at)) / 60) - COALESCE(total_paused_duration_minutes, 0))',
+            'sqlsrv' => '(DATEDIFF(minute, created_at, resolved_at) - COALESCE(total_paused_duration_minutes, 0))',
+            default => "(((strftime('%s', resolved_at) - strftime('%s', created_at)) / 60.0) - COALESCE(total_paused_duration_minutes, 0))",
+        };
     }
 }

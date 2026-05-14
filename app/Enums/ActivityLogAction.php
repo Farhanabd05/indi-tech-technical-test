@@ -9,7 +9,9 @@ enum ActivityLogAction: string
     case UPDATE_STATUS = 'update_status';
     case ASSIGN_TICKET = 'assign_ticket';
     case REASSIGN_TICKET = 'reassign_ticket';
+    case DELETE_TICKET = 'delete_ticket';
     case ADD_COMMENT = 'add_comment';
     case UPLOAD_ATTACHMENT = 'upload_attachment';
+    case DELETE_ATTACHMENT = 'delete_attachment';
     case SLA_OVERDUE = 'sla_overdue';
 }

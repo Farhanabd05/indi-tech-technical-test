@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Enums\TicketStatus; // 1. Import Enum
 
 class Ticket extends Model
 {
+    use SoftDeletes;
     
     /**
      * Get the attributes that should be cast.
@@ -23,6 +25,8 @@ class Ticket extends Model
         'created_by',
         'assigned_agent_id',
         'due_at',
+        'sla_paused_at',
+        'total_paused_duration_minutes',
     ];
 
     protected function casts(): array // 2. Gunakan metode casts()
@@ -31,6 +35,8 @@ class Ticket extends Model
             // 3. Petakan status ke class Enum
             'status' => TicketStatus::class, 
             'due_at' => 'datetime',
+            'sla_paused_at' => 'datetime',
+            'total_paused_duration_minutes' => 'integer',
         ];
     }
     public function category()
@@ -71,6 +77,7 @@ class Ticket extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_at', '<', now())
+            ->whereNull('sla_paused_at')
             ->whereNotIn('status', [
                 TicketStatus::RESOLVED->value,
                 TicketStatus::CLOSED->value,
@@ -82,6 +89,7 @@ class Ticket extends Model
     {
         return $this->due_at !== null
             && $this->due_at->isPast()
+            && $this->sla_paused_at === null
             && ! in_array($this->status, [
                 TicketStatus::RESOLVED,
                 TicketStatus::CLOSED,
@@ -131,7 +139,7 @@ class Ticket extends Model
 
         // overdue filter
         if (isset($filters['overdue']) && $filters['overdue'] == true) {
-            $query->where('due_at', '<', now())->where('status', '!=', TicketStatus::CLOSED);
+            $query->overdue();
         }
 
         if (isset($filters['search'])) {
@@ -148,14 +156,14 @@ class Ticket extends Model
                         $q->where('email', 'like', "%$search%");
                     });
             });
-
-            $query->when(isset($filters['sort_by']) && in_array($filters['sort_by'], ['created_at', 'updated_at', 'priority_id', 'due_at', 'status']), function ($q) use ($filters) {
-                $sortBy = $filters['sort_by'];
-                $direction = $filters['sort_direction'] ?? 'asc';
-                $validDirection = in_array(strtolower($direction), ['asc', 'desc']) ? $direction : 'asc';
-                $q->orderBy($sortBy, $validDirection);
-            });
         }
+
+        $query->when(isset($filters['sort_by']) && in_array($filters['sort_by'], ['created_at', 'updated_at', 'priority_id', 'due_at', 'status']), function ($q) use ($filters) {
+            $sortBy = $filters['sort_by'];
+            $direction = $filters['sort_direction'] ?? 'asc';
+            $validDirection = in_array(strtolower($direction), ['asc', 'desc']) ? $direction : 'asc';
+            $q->orderBy($sortBy, $validDirection);
+        });
     }
 
     public function scopeVisibleTo($query, User $user)

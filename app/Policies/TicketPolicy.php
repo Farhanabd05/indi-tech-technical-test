@@ -26,7 +26,7 @@ class TicketPolicy
         }   
 
         if ($user->hasRole('supervisor')) {
-            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
+            return $this->isAssignedToSupervisorTeam($user, $ticket);
         }
 
         if ($user->hasRole('agent')) {
@@ -90,6 +90,10 @@ class TicketPolicy
             return $ticket->assigned_agent_id === $user->id;
         }
 
+        if ($user->hasRole('supervisor')) {
+            return $this->isAssignedToSupervisorTeam($user, $ticket);
+        }
+
         if ($user->hasRole('customer')) {
             return $ticket->created_by === $user->id && 
                 in_array($ticket->status, [TicketStatus::RESOLVED, TicketStatus::CLOSED]);
@@ -115,7 +119,7 @@ class TicketPolicy
             return true;
         }   
         if ($user->hasRole('supervisor')) {
-            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
+            return $this->isAssignedToSupervisorTeam($user, $ticket);
         }
         if ($user->hasRole('agent')) {
             return $ticket->assigned_agent_id === $user->id;
@@ -125,15 +129,20 @@ class TicketPolicy
 
     public function assign(User $user, Ticket $ticket): bool
     {
-        return $user->hasRole(['administrator']);
+        if ($user->hasRole('administrator')) {
+            return true;
+        }
+
+        if ($user->hasRole('supervisor')) {
+            return $this->isAssignedToSupervisorTeam($user, $ticket);
+        }
+
+        return false;
     }
 
     public function reassign(User $user, Ticket $ticket): bool
     {
-        if ($user->hasRole('supervisor')) {
-            return $ticket->assignedAgent && $ticket->assignedAgent->team_id === $user->team_id;
-        }
-        return $user->hasRole('administrator');
+        return $this->assign($user, $ticket);
     }
 
     public function upload(User $user, Ticket $ticket): bool
@@ -145,5 +154,14 @@ class TicketPolicy
 
         // Izinkan jika pengguna adalah pembuat tiket atau agen yang ditugaskan
         return $user->id === $ticket->created_by || $user->id === $ticket->assigned_agent_id;
+    }
+
+    private function isAssignedToSupervisorTeam(User $user, Ticket $ticket): bool
+    {
+        if ($user->team_id === null || $ticket->assignedAgent === null) {
+            return false;
+        }
+
+        return $ticket->assignedAgent->team_id === $user->team_id;
     }
 }

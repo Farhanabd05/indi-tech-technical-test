@@ -28,4 +28,9 @@ class AttachmentPolicy
  
         return false;
     }
+
+    public function delete(User $user, Attachment $attachment): bool
+    {
+        return $user->hasRole('administrator') || $attachment->uploaded_by === $user->id;
+    }
 }

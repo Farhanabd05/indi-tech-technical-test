@@ -4,9 +4,11 @@ use App\Models\Ticket;
 use App\Models\Category;
 use App\Models\Priority;
 use App\Models\Role;
+use App\Models\Team;
 use App\Models\User;
 use App\Enums\TicketStatus;
 use App\Services\TicketStatusService;
+use Carbon\Carbon;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -23,6 +25,10 @@ describe('Ticket Status Transition', function () {
         $this->priority = Priority::create(['name' => 'Medium', 'level' => 2]);
 
         $this->statusService = new TicketStatusService();
+    });
+
+    afterEach(function () {
+        Carbon::setTestNow();
     });
 
     describe('Valid status transitions', function () {
@@ -46,6 +52,30 @@ describe('Ticket Status Transition', function () {
             $ticket = createTicket(['status' => TicketStatus::ASSIGNED, 'assigned_agent_id' => $agent->id]);
 
             $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+                'status' => TicketStatus::IN_PROGRESS->value,
+            ]);
+
+            $response->assertRedirect();
+            $this->assertDatabaseHas('tickets', [
+                'id' => $ticket->id,
+                'status' => TicketStatus::IN_PROGRESS->value,
+            ]);
+        });
+
+        it('allows supervisor to change status for tickets assigned to agents in their team', function () {
+            $team = Team::create(['name' => 'Supervisor Status Team']);
+            $supervisor = createUserWithRole('supervisor');
+            $supervisor->update(['team_id' => $team->id]);
+
+            $agent = createUserWithRole('agent');
+            $agent->update(['team_id' => $team->id]);
+
+            $ticket = createTicket([
+                'status' => TicketStatus::ASSIGNED,
+                'assigned_agent_id' => $agent->id,
+            ]);
+
+            $response = $this->actingAs($supervisor)->patch(route('tickets.status.update', $ticket), [
                 'status' => TicketStatus::IN_PROGRESS->value,
             ]);
 
@@ -207,6 +237,32 @@ describe('Ticket Status Transition', function () {
                 'status' => TicketStatus::IN_PROGRESS->value,
             ]);
         });
+
+        it('prevents supervisor from changing status for tickets outside their team', function () {
+            $supervisorTeam = Team::create(['name' => 'Supervisor Team']);
+            $otherTeam = Team::create(['name' => 'Other Team']);
+
+            $supervisor = createUserWithRole('supervisor');
+            $supervisor->update(['team_id' => $supervisorTeam->id]);
+
+            $agent = createUserWithRole('agent');
+            $agent->update(['team_id' => $otherTeam->id]);
+
+            $ticket = createTicket([
+                'status' => TicketStatus::ASSIGNED,
+                'assigned_agent_id' => $agent->id,
+            ]);
+
+            $response = $this->actingAs($supervisor)->patch(route('tickets.status.update', $ticket), [
+                'status' => TicketStatus::IN_PROGRESS->value,
+            ]);
+
+            $response->assertStatus(403);
+            $this->assertDatabaseHas('tickets', [
+                'id' => $ticket->id,
+                'status' => TicketStatus::ASSIGNED->value,
+            ]);
+        });
     });
 
     describe('Status transition service validation', function () {
@@ -233,6 +289,90 @@ describe('Ticket Status Transition', function () {
         it('validates closed cannot transition to assigned', function () {
             expect($this->statusService->isValidTransition(TicketStatus::CLOSED, TicketStatus::ASSIGNED))
                 ->toBeFalse();
+        });
+    });
+
+    describe('SLA lifecycle', function () {
+        it('pauses SLA when ticket waits for customer', function () {
+            $now = Carbon::parse('2026-05-14 10:00:00');
+            Carbon::setTestNow($now);
+
+            $agent = createUserWithRole('agent');
+            $ticket = createTicket([
+                'status' => TicketStatus::IN_PROGRESS,
+                'assigned_agent_id' => $agent->id,
+            ]);
+
+            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+                'status' => TicketStatus::WAITING_FOR_CUSTOMER->value,
+            ]);
+
+            $response->assertRedirect();
+
+            $ticket = $ticket->fresh();
+
+            expect($ticket->sla_paused_at?->equalTo($now))->toBeTrue()
+                ->and($ticket->total_paused_duration_minutes)->toBe(0);
+        });
+
+        it('resumes SLA and shifts due date after waiting for customer', function () {
+            $pausedAt = Carbon::parse('2026-05-14 10:00:00');
+            $now = Carbon::parse('2026-05-14 10:45:00');
+            $dueAt = Carbon::parse('2026-05-14 12:00:00');
+            Carbon::setTestNow($now);
+
+            $agent = createUserWithRole('agent');
+            $ticket = createTicket([
+                'status' => TicketStatus::WAITING_FOR_CUSTOMER,
+                'assigned_agent_id' => $agent->id,
+                'due_at' => $dueAt,
+                'sla_paused_at' => $pausedAt,
+                'total_paused_duration_minutes' => 10,
+            ]);
+
+            $response = $this->actingAs($agent)->patch(route('tickets.status.update', $ticket), [
+                'status' => TicketStatus::IN_PROGRESS->value,
+            ]);
+
+            $response->assertRedirect();
+
+            $ticket = $ticket->fresh();
+
+            expect($ticket->sla_paused_at)->toBeNull()
+                ->and($ticket->total_paused_duration_minutes)->toBe(55)
+                ->and($ticket->due_at?->equalTo($dueAt->copy()->addMinutes(45)))->toBeTrue();
+        });
+
+        it('restarts SLA due date when ticket is reopened', function () {
+            $now = Carbon::parse('2026-05-14 10:00:00');
+            Carbon::setTestNow($now);
+
+            $customer = createUserWithRole('customer');
+            $ticket = createTicket([
+                'status' => TicketStatus::RESOLVED,
+                'created_by' => $customer->id,
+                'due_at' => $now->copy()->subDay(),
+                'resolved_at' => $now->copy()->subHour(),
+                'closed_at' => $now->copy()->subMinutes(30),
+                'sla_paused_at' => $now->copy()->subHours(2),
+                'total_paused_duration_minutes' => 120,
+                'overdue_notified_at' => $now->copy()->subHour(),
+            ]);
+
+            $response = $this->actingAs($customer)->patch(route('tickets.status.update', $ticket), [
+                'status' => TicketStatus::REOPENED->value,
+            ]);
+
+            $response->assertRedirect();
+
+            $ticket = $ticket->fresh();
+
+            expect($ticket->due_at?->equalTo($now->copy()->addHours(72)))->toBeTrue()
+                ->and($ticket->resolved_at)->toBeNull()
+                ->and($ticket->closed_at)->toBeNull()
+                ->and($ticket->sla_paused_at)->toBeNull()
+                ->and($ticket->total_paused_duration_minutes)->toBe(0)
+                ->and($ticket->overdue_notified_at)->toBeNull();
         });
     });
 });

@@ -5,6 +5,7 @@ use App\Models\Comment;
 use App\Models\Category;
 use App\Models\Priority;
 use App\Models\Role;
+use App\Models\Team;
 use App\Models\User;
 use App\Enums\TicketStatus;
 
@@ -269,6 +270,9 @@ describe('Ticket Internal Note', function () {
             $supervisor = createUserWithRole('supervisor');
             $agent = createUserWithRole('agent');
             $customer = createUserWithRole('customer');
+            $team = Team::create(['name' => 'Internal Note Supervisor Team']);
+            $supervisor->update(['team_id' => $team->id]);
+            $agent->update(['team_id' => $team->id]);
 
             $ticket = Ticket::create([
                 'ticket_number' => 'TCK-' . date('Y') . '-000001',

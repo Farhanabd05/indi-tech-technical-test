@@ -25,9 +25,16 @@ class TicketFilterRequest extends FormRequest
             
             // Agen divalidasi ke tabel users
             'assigned_agent_id' => ['nullable', 'exists:users,id'],
+            'label_id' => ['nullable', 'exists:labels,id'],
             
             'created_from' => ['nullable', 'date'],
             'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
+            'due_from' => ['nullable', 'date'],
+            'due_to' => ['nullable', 'date', 'after_or_equal:due_from'],
+            'overdue' => ['nullable', 'boolean'],
+            'search' => ['nullable', 'string'],
+            'sort_by' => ['nullable', 'string', Rule::in(['created_at', 'updated_at', 'priority_id', 'due_at', 'status'])],
+            'sort_direction' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
         ];
     }
 }
