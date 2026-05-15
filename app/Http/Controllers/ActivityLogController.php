@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Enums\ActivityLogAction;
 use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +33,38 @@ class ActivityLogController extends Controller
                         })
                         ->orderBy('created_at', 'desc')->paginate(10);
         }
+
+        $this->loadTargetUsersForAssignmentLogs($logs);
+
         return view('activity_logs.index', compact('logs'));
+    }
+
+    private function loadTargetUsersForAssignmentLogs($logs): void
+    {
+        $assignmentActions = [
+            ActivityLogAction::ASSIGN_TICKET->value,
+            ActivityLogAction::REASSIGN_TICKET->value,
+        ];
+
+        $targetUserIds = $logs->getCollection()
+            ->filter(fn (ActivityLog $log) => in_array($log->action, $assignmentActions, true) && ctype_digit((string) $log->new_value))
+            ->pluck('new_value')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $targetUsers = $targetUserIds->isEmpty()
+            ? collect()
+            : User::whereIn('id', $targetUserIds)->get()->keyBy('id');
+
+        $logs->getCollection()->each(function (ActivityLog $log) use ($assignmentActions, $targetUsers) {
+            $targetUser = null;
+
+            if (in_array($log->action, $assignmentActions, true) && ctype_digit((string) $log->new_value)) {
+                $targetUser = $targetUsers->get((int) $log->new_value);
+            }
+
+            $log->setRelation('targetUser', $targetUser);
+        });
     }
 }

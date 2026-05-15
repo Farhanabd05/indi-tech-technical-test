@@ -3,52 +3,53 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Admin Dashboard</h2>
     </x-slot>
 
-    <div class="container mx-auto py-8">
+    <div class="max-w-7xl mx-auto space-y-6 p-6">
 
-        <!-- WADAH 1: Khusus 5 Metrik Tunggal -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Total Tickets: {{ $totalTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Overdue Tickets: {{ $overdueTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Unassigned Tickets: {{ $unassignedTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Created This Week: {{ $createdThisWeek }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Average Resolution Time: {{ round($averageResolution) }} minutes</h2>
-            </div>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <x-card>
+                <p class="text-sm text-gray-500">Total Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $totalTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Overdue Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $overdueTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Unassigned Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $unassignedTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Created This Week</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $createdThisWeek }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Average Resolution Time: {{ round($averageResolution) }} minutes</p>
+                <p class="mt-2 text-2xl font-semibold">{{ round($averageResolution) }} minutes</p>
+            </x-card>
         </div>
 
-        <!-- WADAH 2: Khusus Analitik Komparatif -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-4">Top Performing Agents</h2>
-                <table class="table-auto w-full text-left">
-                    <thead class="border-b">
+            <x-card title="Top Performing Agents">
+                <x-table>
+                    <thead class="border-b bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2">Agent</th>
-                            <th class="px-4 py-2">Tickets Resolved</th>
+                            <th class="px-4 py-3 font-medium text-gray-600">Agent</th>
+                            <th class="px-4 py-3 font-medium text-gray-600">Tickets Resolved</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
                         @foreach ($topAgents as $agent)
                             <tr>
-                                <td class="px-4 py-2">{{ $agent->assignedAgent->name }}</td>
-                                <td class="px-4 py-2">{{ $agent->total }}</td>
+                                <td class="px-4 py-3">{{ $agent->assignedAgent->name }}</td>
+                                <td class="px-4 py-3">{{ $agent->total }}</td>
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
-            </div>
-            <!-- Perbaikan Wadah Kanan -->
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-6">Distribusi Tiket</h2>
-                <div class="flex flex-col space-y-8">
+                </x-table>
+            </x-card>
+
+            <x-card title="Distribusi Tiket">
+                <div class="space-y-8">
                     <div class="h-64">
                         <canvas id="ticketsByStatusChart"></canvas>
                     </div>
@@ -59,7 +60,7 @@
                         <canvas id="ticketsByCategoryChart"></canvas>
                     </div>
                 </div>
-            </div>
+            </x-card>
         </div>
     </div>
     <!-- Load Chart.js from CDN (Dipindah ke dalam layout) -->

@@ -4,36 +4,45 @@
             Agent Dashboard
         </h2>
     </x-slot>
-    <div class="container mx-auto">
-        <div class="grid grid-cols-4 gap-4">
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Total Tickets: {{ $totalTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">In Progress Tickets: {{ $inProgressTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Waiting for Customer Tickets: {{ $waitingForCustomerTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Overdue Tickets: {{ $overdueTickets }}</h2>
-            </div>
+
+    <div class="max-w-7xl mx-auto space-y-6 p-6">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <x-card>
+                <p class="text-sm text-gray-500">Total Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $totalTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">In Progress</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $inProgressTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Waiting for Customer</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $waitingForCustomerTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Overdue</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $overdueTickets }}</p>
+            </x-card>
         </div>
-        <h2 class="text-xl font-bold mb-4">Recent Updates</h2>
-        <ul>
+
+        <x-card title="Recent Updates">
             @if ($recentUpdates->isEmpty())
-                <li>No recent updates available.</li>
+                <p class="text-sm text-gray-500">No recent updates available.</p>
             @else
-                @foreach ($recentUpdates as $update)
-                    <li>
-                        <h3 class="text-lg font-bold mb-2">
-                            <a href=" {{ route('tickets.show', $update->id) }}" class="text-blue-600 hover:underline">{{ $update->title }}</a>
-                        </h3>
-                        <p class="text-gray-700 mb-2">Status: {{ $update->status }}</p>
-                        <p class="text-gray-700 mb-2">Updated At: {{ $update->updated_at->format('d M Y H:i') }}</p>
-                    </li>
-                @endforeach
+                <div class="divide-y">
+                    @foreach ($recentUpdates as $update)
+                        <div class="py-4 first:pt-0 last:pb-0">
+                            <a href="{{ route('tickets.show', $update->id) }}" class="font-medium text-blue-600 hover:underline">
+                                {{ $update->title }}
+                            </a>
+                            <div class="mt-2 flex flex-wrap gap-3 text-sm text-gray-600">
+                                <x-status-badge :status="$update->status" />
+                                <span>Updated At: {{ $update->updated_at->format('d M Y H:i') }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             @endif
-        </ul>
+        </x-card>
     </div>
 </x-app-layout>

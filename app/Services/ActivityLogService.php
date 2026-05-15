@@ -5,9 +5,8 @@ namespace App\Services;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use App\Enums\ActivityLogAction;
+
 class ActivityLogService
 {
     /**
@@ -34,20 +33,12 @@ class ActivityLogService
             $newValue = json_encode($newValue);
         }
 
-        try {
-            // Struktur penyimpanan log
-            ActivityLog::create([
-                'ticket_id'   => $ticket->id,
-                'user_id'     => $user ? $user->id : null,
-                'action'      => $action->value,
-                'old_value'   => $oldValue,
-                'new_value'   => $newValue,
-            ]);
-        } catch (\Exception $e) {
-            // Mekanisme Pertahanan: Log gagal, tapi aplikasi lanjut berjalan
-            Log::error('Gagal menyimpan Activity Log: ' . $e->getMessage());
-            
-            // Opsional: Kirim notifikasi ke sistem pemantauan/admin
-        }
+        ActivityLog::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => $user ? $user->id : null,
+            'action'      => $action->value,
+            'old_value'   => $oldValue,
+            'new_value'   => $newValue,
+        ]);
     }
 }

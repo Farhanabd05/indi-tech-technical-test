@@ -8,6 +8,9 @@ use App\Models\Priority;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\Ticket;
+use App\Services\ActivityLogService;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -81,6 +84,7 @@ describe('Dashboard and activity log reporting', function () {
 
     it('renders activity log system actor and current action labels safely', function () {
         $admin = createUserWithRole('administrator');
+        $agent = createUserWithRole('agent');
         $customer = createUserWithRole('customer');
         $ticket = createDashboardTicket($this->category->id, $this->priority->id, $customer->id, [
             'ticket_number' => 'TCK-' . date('Y') . '-700005',
@@ -99,12 +103,68 @@ describe('Dashboard and activity log reporting', function () {
             'old_value' => 'evidence.pdf',
         ]);
 
+        ActivityLog::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $admin->id,
+            'action' => ActivityLogAction::UPDATE_STATUS->value,
+            'old_value' => TicketStatus::OPEN->value,
+            'new_value' => TicketStatus::RESOLVED->value,
+        ]);
+
+        ActivityLog::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $admin->id,
+            'action' => ActivityLogAction::UPLOAD_ATTACHMENT->value,
+            'new_value' => 'evidence.pdf',
+        ]);
+
+        ActivityLog::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $admin->id,
+            'action' => ActivityLogAction::ASSIGN_TICKET->value,
+            'new_value' => $agent->id,
+        ]);
+
+        $queries = [];
+        DB::listen(function ($query) use (&$queries) {
+            $queries[] = $query->sql . ' ' . json_encode($query->bindings);
+        });
+
         $response = $this->actingAs($admin)->get(route('activity_logs.index'));
 
         $response->assertStatus(200);
         $response->assertSee('System');
         $response->assertSee('SLA tiket telah melewati batas waktu');
         $response->assertSee('Lampiran evidence.pdf telah dihapus');
+        $response->assertSee('Tiket di-assign kepada ' . $agent->name);
+
+        $userLookupQueries = collect($queries)
+            ->filter(fn (string $query) => str_contains($query, 'from "users"') && str_contains($query, 'where "id" in'))
+            ->implode("\n");
+
+        expect($userLookupQueries)->not->toContain(TicketStatus::RESOLVED->value)
+            ->and($userLookupQueries)->not->toContain('evidence.pdf');
+    });
+
+    it('lets activity log failures bubble up so surrounding transactions roll back', function () {
+        $customer = createUserWithRole('customer');
+
+        expect(function () use ($customer) {
+            DB::transaction(function () use ($customer) {
+                $ticket = createDashboardTicket($this->category->id, $this->priority->id, $customer->id, [
+                    'ticket_number' => 'TCK-' . date('Y') . '-700006',
+                ]);
+
+                $missingTicket = new Ticket();
+                $missingTicket->forceFill(['id' => 999999]);
+
+                ActivityLogService::log($missingTicket, $customer, ActivityLogAction::CREATE_TICKET);
+            });
+        })->toThrow(QueryException::class);
+
+        $this->assertDatabaseMissing('tickets', [
+            'ticket_number' => 'TCK-' . date('Y') . '-700006',
+        ]);
     });
 });
 

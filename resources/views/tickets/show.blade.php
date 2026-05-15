@@ -1,144 +1,189 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $ticket->title }}</h2>
-        <!-- tambahkan tombol kembali -->
-        <a href="{{ route('tickets.index') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Kembali</a>
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-800">{{ $ticket->title }}</h2>
+            <a href="{{ route('tickets.index') }}" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white">Kembali</a>
+        </div>
     </x-slot>
-    <div class="container mx-auto">
-        <div class="mb-4">
-            <p>Status: {{ $ticket->status }}</p>
-            @can('changeStatus', $ticket)
-                <form action="{{ route('tickets.status.update', $ticket) }}" method="POST">
-                    @csrf
-                    @method('PATCH')
-                    <label for="status">Ubah Status:</label>
-                    <select name="status" id="status">
-                        @foreach ($statuses as $status)
-                            <option value="{{ $status }}" {{ $ticket->status->value === $status ? 'selected' : '' }}>
-                                {{ \App\Enums\TicketStatus::from($status)->label() }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('status')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                    <button type="submit">Simpan</button>
-                </form>
-            @endcan
-            <p>Prioritas: {{ $ticket->priority->name }}</p>
-            <p>Kategori: {{ $ticket->category->name }}</p>
-        </div>
-        <div class="mb-4">
-            <p>Deskripsi:</p>
-            <p>{{ $ticket->description }}</p>
-        </div>
-        <div class="mb-4">
-            <p>Dibuat oleh: {{ $ticket->creator->name }}</p>
-            <p>Dibuat pada: {{ $ticket->created_at }}</p>
-        </div>
-        <div class="mb-4">
-            <p>Label:</p>
-            <ul>
-                @foreach ($ticket->labels as $label)
-                    <li>{{ $label->name }}</li>
-                @endforeach
-            </ul>
-        </div>
-        <div class="mb-4">
-            <p>Lampiran:</p>
-            <ul>
-                @foreach ($ticket->attachments as $attachment)
-                    <li><a href="{{ route('attachments.show', $attachment) }}">{{ $attachment->original_name }}</a></li>
-                @endforeach
-            </ul>
-        </div>
-        <!-- current agent yang didelegasikan -->
-        <div class="mb-4">
-            <p>Agen yang didelegasikan:</p>
-            @if($ticket->assignedAgent)
-                <p>{{ $ticket->assignedAgent->name }}</p>
-            @else
-                <p>Tidak ada agen yang didelegasikan.</p>
-            @endif
-        </div>
-        <div class="mb-8">
-            @if(Gate::allows('assign', $ticket) || Gate::allows('reassign', $ticket))
-                <form action="{{ route('tickets.assign', $ticket) }}" method="POST" class="inline-block">
-                    @csrf
-                    <label for="agent_id" class="text-sm font-medium text-gray-700">Pendelegasikan ke Agen:</label>
-                    <select id="agent_id" name="assigned_agent_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        @foreach ($agents as $agent)
-                            <option value="{{ $agent->id }}" @if($ticket->assignedAgent && $ticket->assignedAgent->id == $agent->id) selected @endif>{{ $agent->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('assigned_agent_id')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Pendelegasikan</button>
-                </form>
-            @endif
-        </div>
-        <!-- Formulir Tambah Komentar -->
-        <div class="mb-8">
-            <form action="{{ route('tickets.comments.store', $ticket) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="mb-4">
-                    <textarea name="body" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Tulis komentar..."></textarea>
-                    @error('body')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                @if(!auth()->user()->hasRole('customer'))
-                    <div class="mb-4">
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" name="is_internal" value="1" class="form-checkbox text-blue-600">
-                            <span class="ml-2 text-sm text-gray-700">Tandai sebagai Catatan Internal</span>
-                        </label>
-                    </div>
-                @endif
-                <div class="mb-4">
-                    <label for="attachments" class="block text-gray-700 text-sm font-bold mb-2">Lampiran</label>
-                    <input type="file" name="attachments[]" id="attachments" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" multiple>
-                    @error('attachments')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Tambahkan Komentar</button>
-            </form>
-        </div>
 
-        <!-- Daftar Komentar -->
-        <div class="flex flex-col gap-4">
-            @foreach ($ticket->comments as $comment)
-                <!-- Logika saringan: Tampilkan jika publik, ATAU jika agen/admin berhak melihat catatan internal -->
-                @if (! $comment->is_internal || auth()->user()->can('viewInternal', $comment))
-                    <div class="bg-gray-200 p-4 rounded {{ $comment->is_internal ? 'border-l-4 border-red-500' : 'border-l-4 border-blue-500' }}">
-                        <p class="text-gray-800">{{ $comment->body }}</p>
-                        @if($comment->attachments->isNotEmpty())
-                            <div class="mt-4">
-                                <p class="text-sm text-gray-600">Lampiran:</p>
-                                <ul>
-                                    @foreach ($comment->attachments as $attachment)
-                                        <li><a href="{{ route('attachments.show', $attachment) }}">{{ $attachment->original_name }}</a></li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-                        <p class="text-sm text-gray-600 mt-2">Dibuat oleh: {{ $comment->user->name }} 
-                            @if($comment->is_internal)
-                                <span class="text-red-600 font-bold ml-1">(Internal)</span>
-                            @endif
-                        </p>
-                        <p class="text-xs text-gray-500">Dibuat pada: {{ $comment->created_at }}</p>
+    <div class="max-w-7xl mx-auto space-y-6 p-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="space-y-6 lg:col-span-2">
+                <x-card title="Detail Tiket">
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <x-status-badge :status="$ticket->status" />
+                            <span class="text-sm text-gray-600">Prioritas: {{ $ticket->priority->name }}</span>
+                            <span class="text-sm text-gray-600">Kategori: {{ $ticket->category->name }}</span>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Deskripsi</p>
+                            <p class="mt-1 text-gray-800">{{ $ticket->description }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 text-sm text-gray-600 md:grid-cols-2">
+                            <p>Dibuat oleh: {{ $ticket->creator->name }}</p>
+                            <p>Dibuat pada: {{ $ticket->created_at }}</p>
+                        </div>
                     </div>
-                @endif
-            @endforeach
+                </x-card>
+
+                <x-card title="Komentar">
+                    <form action="{{ route('tickets.comments.store', $ticket) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+                        <div>
+                            <textarea name="body" rows="3" class="w-full rounded border-gray-300" placeholder="Tulis komentar..."></textarea>
+                            @error('body')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        @if(!auth()->user()->hasRole('customer'))
+                            <label class="inline-flex items-center text-sm text-gray-700">
+                                <input type="checkbox" name="is_internal" value="1" class="rounded border-gray-300 text-blue-600">
+                                <span class="ml-2">Tandai sebagai Catatan Internal</span>
+                            </label>
+                        @endif
+
+                        <div>
+                            <label for="attachments" class="block text-sm font-medium text-gray-700">Lampiran</label>
+                            <input type="file" name="attachments[]" id="attachments" class="mt-1 w-full rounded border border-gray-300 p-2 text-sm" multiple>
+                            @error('attachments')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                            @foreach ($errors->get('attachments.*') as $messages)
+                                @foreach ($messages as $message)
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @endforeach
+                            @endforeach
+                        </div>
+
+                        <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white">Tambahkan Komentar</button>
+                    </form>
+
+                    <div class="mt-6 divide-y">
+                        @foreach ($ticket->comments as $comment)
+                            @if (! $comment->is_internal || auth()->user()->can('viewInternal', $comment))
+                                <div class="py-4 first:pt-0 last:pb-0">
+                                    <p class="text-gray-800">{{ $comment->body }}</p>
+
+                                    @if($comment->attachments->isNotEmpty())
+                                        <div class="mt-3">
+                                            <p class="text-sm font-medium text-gray-500">Lampiran</p>
+                                            <ul class="mt-1 space-y-1">
+                                                @foreach ($comment->attachments as $attachment)
+                                                    <li>
+                                                        <a href="{{ route('attachments.show', $attachment) }}" class="text-blue-600 hover:underline">
+                                                            {{ $attachment->original_name }}
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                    <p class="mt-3 text-sm text-gray-600">
+                                        Dibuat oleh: {{ $comment->user->name }}
+                                        @if($comment->is_internal)
+                                            <span class="ml-1 font-medium text-red-600">(Internal)</span>
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-500">Dibuat pada: {{ $comment->created_at }}</p>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </x-card>
+            </div>
+
+            <div class="space-y-6">
+                @can('changeStatus', $ticket)
+                    <x-card title="Ubah Status">
+                        <form action="{{ route('tickets.status.update', $ticket) }}" method="POST" class="space-y-3">
+                            @csrf
+                            @method('PATCH')
+                            <select name="status" id="status" class="w-full rounded border-gray-300">
+                                @foreach ($statuses as $status)
+                                    <option value="{{ $status }}" {{ $ticket->status->value === $status ? 'selected' : '' }}>
+                                        {{ \App\Enums\TicketStatus::from($status)->label() }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('status')
+                                <p class="text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                            <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white">Simpan</button>
+                        </form>
+                    </x-card>
+                @endcan
+
+                <x-card title="Agen">
+                    <p class="text-sm text-gray-600">
+                        {{ $ticket->assignedAgent?->name ?? 'Tidak ada agen yang didelegasikan.' }}
+                    </p>
+
+                    @if(Gate::allows('assign', $ticket) || Gate::allows('reassign', $ticket))
+                        <form action="{{ route('tickets.assign', $ticket) }}" method="POST" class="mt-4 space-y-3">
+                            @csrf
+                            <label for="agent_id" class="block text-sm font-medium text-gray-700">Pendelegasikan ke Agen</label>
+                            <select id="agent_id" name="assigned_agent_id" class="w-full rounded border-gray-300">
+                                @foreach ($agents as $agent)
+                                    <option value="{{ $agent->id }}" @if($ticket->assignedAgent && $ticket->assignedAgent->id == $agent->id) selected @endif>{{ $agent->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('assigned_agent_id')
+                                <p class="text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                            <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white">Pendelegasikan</button>
+                        </form>
+                    @endif
+                </x-card>
+
+                <x-card title="Label">
+                    @if($ticket->labels->isEmpty())
+                        <p class="text-sm text-gray-500">Tidak ada label.</p>
+                    @else
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($ticket->labels as $label)
+                                <span class="rounded bg-gray-100 px-2.5 py-1 text-xs text-gray-700">{{ $label->name }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+                </x-card>
+
+                <x-card title="Lampiran">
+                    @if($ticket->attachments->isEmpty())
+                        <p class="text-sm text-gray-500">Tidak ada lampiran.</p>
+                    @else
+                        <ul class="space-y-2">
+                            @foreach ($ticket->attachments as $attachment)
+                                <li>
+                                    <a href="{{ route('attachments.show', $attachment) }}" class="text-blue-600 hover:underline">
+                                        {{ $attachment->original_name }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-card>
+
+                <x-card title="Upload Lampiran">
+                    <form action="{{ route('tickets.attachments.store', $ticket->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                        @csrf
+                        <input type="file" name="attachments[]" class="w-full rounded border border-gray-300 p-2 text-sm" multiple required>
+                        @error('attachments')
+                            <p class="text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                        @foreach ($errors->get('attachments.*') as $messages)
+                            @foreach ($messages as $message)
+                                <p class="text-xs text-red-600">{{ $message }}</p>
+                            @endforeach
+                        @endforeach
+                        <button type="submit" class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white">Uji Upload Lampiran Baru</button>
+                    </form>
+                </x-card>
+            </div>
         </div>
-        <form action="{{ route('tickets.attachments.store', $ticket->id) }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <input type="file" name="attachments[]" multiple required>
-            <button type="submit">Uji Upload Lampiran Baru</button>
-        </form>
     </div>
 </x-app-layout>

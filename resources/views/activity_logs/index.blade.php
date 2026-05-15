@@ -2,33 +2,34 @@
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Aktivitas Tiket</h2>
     </x-slot>
-    <div class="container mx-auto">
-        <table class="table-auto w-full">
-            <thead>
+
+    <div class="max-w-7xl mx-auto space-y-6 p-6">
+        <x-table>
+            <thead class="border-b bg-gray-50">
                 <tr>
-                    <th class="px-4 py-2">No Tiket</th>
-                    <th class="px-4 py-2">Judul Tiket</th>
-                    <th class="px-4 py-2">Aktor</th>
-                    <th class="px-4 py-2">Tanggal</th>
-                    <th class="px-4 py-2">Detail Aktivitas</th>
+                    <th class="px-4 py-3 font-medium text-gray-600">No Tiket</th>
+                    <th class="px-4 py-3 font-medium text-gray-600">Judul Tiket</th>
+                    <th class="px-4 py-3 font-medium text-gray-600">Aktor</th>
+                    <th class="px-4 py-3 font-medium text-gray-600">Tanggal</th>
+                    <th class="px-4 py-3 font-medium text-gray-600">Detail Aktivitas</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y">
                 @foreach ($logs as $log)
                     <tr>
-                        <td class="border px-4 py-2 text-blue-600 hover:text-blue-800 underline">
+                        <td class="px-4 py-3">
                             @if($log->ticket)
-                                <a href="{{ route('tickets.show', $log->ticket) }}">
+                                <a href="{{ route('tickets.show', $log->ticket) }}" class="text-blue-600 hover:underline">
                                     {{ $log->ticket->ticket_number }}
                                 </a>
                             @else
                                 Tiket sudah dihapus
                             @endif
                         </td>
-                        <td class="border px-4 py-2">{{ $log->ticket?->title ?? 'Tiket sudah dihapus' }}</td>
-                        <td class="border px-4 py-2">{{ $log->user ? $log->user->name : 'System' }}</td>
-                        <td class="border px-4 py-2">{{ $log->created_at }}</td>
-                        <td class="border px-4 py-2">
+                        <td class="px-4 py-3">{{ $log->ticket?->title ?? 'Tiket sudah dihapus' }}</td>
+                        <td class="px-4 py-3">{{ $log->user ? $log->user->name : 'System' }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $log->created_at }}</td>
+                        <td class="px-4 py-3">
                             @switch($log->action)
                                 @case('create_ticket')
                                     Ticket telah dibuat
@@ -47,11 +48,11 @@
                                 @break
 
                                 @case('assign_ticket')
-                                    Tiket di-assign kepada {{ $log->assigned_agent_name }}
+                                    Tiket di-assign kepada {{ $log->targetUser?->name ?? 'Unknown' }}
                                 @break
 
                                 @case('reassign_ticket')
-                                    Tiket di-reassign kepada {{ $log->assigned_agent_name }}
+                                    Tiket di-reassign kepada {{ $log->targetUser?->name ?? 'Unknown' }}
                                 @break
 
                                 @case('delete_ticket')
@@ -77,7 +78,8 @@
                     </tr>
                 @endforeach
             </tbody>
-        </table>
+        </x-table>
+
         {{ $logs->links() }}
     </div>
 </x-app-layout>

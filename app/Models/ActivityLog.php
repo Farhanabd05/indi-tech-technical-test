@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Ticket;
 use App\Models\User;
 
@@ -16,19 +17,14 @@ class ActivityLog extends Model
         'new_value',
     ];
 
-    public function ticket()
+    public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-
-    public function getAssignedAgentNameAttribute()
-    {
-        return User::find($this->new_value)?->name ?? 'Agent Sudah Dihapus';
-    }
 }

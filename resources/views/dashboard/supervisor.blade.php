@@ -4,40 +4,46 @@
             Supervisor Dashboard
         </h2>
     </x-slot>
-    <div class="container mx-auto">
-        <div class="grid grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Total Tickets: {{ $totalTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Unassigned Tickets: {{ $openTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Overdue Tickets: {{ $overdueTickets }}</h2>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-xl font-bold mb-2">Escalated Tickets: {{ $escalatedTickets }}</h2>
-            </div>
+
+    <div class="max-w-7xl mx-auto space-y-6 p-6">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <x-card>
+                <p class="text-sm text-gray-500">Total Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $totalTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Open Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $openTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Overdue Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $overdueTickets }}</p>
+            </x-card>
+            <x-card>
+                <p class="text-sm text-gray-500">Escalated Tickets</p>
+                <p class="mt-2 text-2xl font-semibold">{{ $escalatedTickets }}</p>
+            </x-card>
         </div>
-        <div class="bg-white rounded shadow p-4">
-            <h2 class="text-xl font-bold mb-4">Agent Performance</h2>
-            <table class="table-auto w-full text-left">
-                <thead class="border-b">
+
+        <x-card title="Agent Performance">
+            <x-table>
+                <thead class="border-b bg-gray-50">
                     <tr>
-                        <th class="px-4 py-2">Agent</th>
-                        <th class="px-4 py-2">Active Tickets</th>
-                        <th class="px-4 py-2">Completion Rate</th>
+                        <th class="px-4 py-3 font-medium text-gray-600">Agent</th>
+                        <th class="px-4 py-3 font-medium text-gray-600">Active Tickets</th>
+                        <th class="px-4 py-3 font-medium text-gray-600">Average Resolution</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y">
-                @foreach ($agentWorkload as $agent)
-                    <tr>
-                        <td class="px-4 py-2">{{ $agent->assignedAgent->name }}</td>
-                        <td class="px-4 py-2">{{ $agent->total }}</td>
-                        <td class="px-4 py-2">{{ $averageResolutionTime[$agent->assigned_agent_id] ?? 'N/A' }}</td>
-                    </tr>
-                @endforeach
-            </table>
-        </div>
+                    @foreach ($agentWorkload as $agent)
+                        <tr>
+                            <td class="px-4 py-3">{{ $agent->assignedAgent->name }}</td>
+                            <td class="px-4 py-3">{{ $agent->total }}</td>
+                            <td class="px-4 py-3">{{ $averageResolutionTime[$agent->assigned_agent_id] ?? 'N/A' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </x-table>
+        </x-card>
     </div>
 </x-app-layout>
